@@ -12,30 +12,16 @@ import (
 )
 
 type Model struct {
-	choices  []string // items on the to-do list
-	cursor   int
+	choices  []string         // items on the to-do list
 	selected map[int]struct{} // which to-do items are selected
-    print_list []*PrintItem
+
+	pl *PrintList
 
 	redis *redis.Client
 
 	search      string
 	scan_cursor int
-	node       Node
-}
-
-func (m *Model) Print() string {
-	str := ""
-	for i, item := range m.print_list {
-        if i == m.cursor {
-            str += ">"
-        } else {
-            str += " "
-        }
-        str += item.Print()
-	}
-
-	return str
+	node        Node
 }
 
 func initialModel() Model {
@@ -54,6 +40,10 @@ func initialModel() Model {
 		}),
 		node: Node{
 			Value: "*", Children: make([]*Node, 0),
+		},
+		pl: &PrintList{
+			List:   make([]*PrintItem, 0),
+			cursor: 0,
 		},
 	}
 }
@@ -87,7 +77,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.node.AddChild(split[1:])
 		}
 		m.choices = append(m.choices, msg.keys...)
-        m.print_list = GeneratePrintList(&m.node, 0)
+		// m.print_list = GeneratePrintList(&m.node, 0)
+		m.pl.Update(updatePL{&m.node})
+
 		m.scan_cursor = msg.cursor
 
 	// Is it a key press?
@@ -103,36 +95,30 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "m":
 			return m, m.Scan()
 
-        case "e":
-            n := m.print_list[m.cursor].Node
-            n.expanded = !n.expanded
-            m.print_list = GeneratePrintList(&m.node, 0)
+		case "e":
+            m.pl.ToggleExpand()
+			m.pl.Update(updatePL{&m.node})
 
-            // TODO: if on a leaf node, find the previous node an close expand
-            // maybe look at the depth and find one less depth that at cursor
+			// TODO: if on a leaf node, find the previous node an close expand
+			// maybe look at the depth and find one less depth that at cursor
 
-		// The "up" and "k" keys move the cursor up
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-
-		// The "down" and "j" keys move the cursor down
-		case "down", "j":
-			if m.cursor < len(m.print_list)-1 {
-				m.cursor++
-			}
-
-		// The "enter" key and the spacebar (a literal space) toggle
-		// the selected state for the item that the cursor is pointing at.
-		case "enter", " ":
-			_, ok := m.selected[m.cursor]
-			if ok {
-				delete(m.selected, m.cursor)
-			} else {
-				m.selected[m.cursor] = struct{}{}
-			}
+			// The "enter" key and the spacebar (a literal space) toggle
+			// the selected state for the item that the cursor is pointing at.
+			// case "enter", " ":
+			// 	_, ok := m.selected[m.cursor]
+			// 	if ok {
+			// 		delete(m.selected, m.cursor)
+			// 	} else {
+			// 		m.selected[m.cursor] = struct{}{}
+			// 	}
+			// }
 		}
+	}
+	res, cmd := m.pl.Update(msg)
+	if a, ok := res.(*PrintList); ok {
+		m.pl = a
+	} else {
+		return res, cmd
 	}
 
 	// Return the updated model to the Bubble Tea runtime for processing.
@@ -141,34 +127,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	// The header
-	s := "What should we buy at the market?\n\n"
-
-	// Iterate over our choices
-	// for i, choice := range m.choices {
-
-	// 	// Is the cursor pointing at this choice?
-	// 	cursor := " " // no cursor
-	// 	if m.cursor == i {
-	// 		cursor = ">" // cursor!
-	// 	}
-
-	// 	// Is this choice selected?
-	// 	checked := " " // not selected
-	// 	if _, ok := m.selected[i]; ok {
-	// 		checked = "x" // selected!
-	// 	}
-
-	// 	// Render the row
-	// 	s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
-	// }
-
-    s += m.Print()
+	s := m.pl.View()
 
 	// The footer
 	s += "\nPress q to quit.\n"
-	// s += fmt.Sprintf("%v\n\n", m.node)
-    // s += fmt.Sprintf(m.node.Print(2))
 
 	// Send the UI for rendering
 	return s
