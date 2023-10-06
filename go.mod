@@ -1,4 +1,4 @@
-module my_tea
+module github.com/mat2cc/redis_tui
 
 go 1.21.1
 
