@@ -12,12 +12,13 @@ import (
 
 type Model struct {
 	choices  []string         // items on the to-do list
+    cursor int 
 	selected map[int]struct{} // which to-do items are selected
 
 	redis *redis.Client
 
 	search string
-	cursor int 
+	scan_cursor int
 }
 
 func initialModel() Model {
@@ -45,7 +46,7 @@ type scanMsg struct {
 var ctx = context.Background()
 
 func (m *Model) Scan() tea.Cmd {
-	keys, cursor, err := m.redis.Scan(ctx, uint64(m.cursor), m.search, 10).Result()
+	keys, cursor, err := m.redis.Scan(ctx, uint64(m.scan_cursor), m.search, 10).Result()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -62,7 +63,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case scanMsg:
 		m.choices = append(m.choices, msg.keys...)
-		m.cursor = msg.cursor
+		m.scan_cursor = msg.cursor
 
 	// Is it a key press?
 	case tea.KeyMsg:
