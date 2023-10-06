@@ -3,20 +3,25 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/redis/go-redis/v9"
 )
 
-type model struct {
+type Model struct {
 	choices  []string         // items on the to-do list
-	cursor   int              // which to-do list item our cursor is pointing at
 	selected map[int]struct{} // which to-do items are selected
+
+	redis *redis.Client
+
+	search string
+	cursor int 
 }
 
-func initialModel() model {
-	return model{
+func initialModel() Model {
+	return Model{
 		// Our to-do list is a grocery list
 		choices: []string{},
 
@@ -24,6 +29,11 @@ func initialModel() model {
 		// the  map like a mathematical set. The keys refer to the indexes
 		// of the `choices` slice, above.
 		selected: make(map[int]struct{}),
+		redis: redis.NewClient(&redis.Options{
+			Addr:     "localhost:6379",
+			Password: "", // no password set
+			DB:       0,  // use default DB
+		}),
 	}
 }
 
@@ -34,31 +44,25 @@ type scanMsg struct {
 
 var ctx = context.Background()
 
-func scan(start int, search string) tea.Cmd {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-
-	keys, cursor, err := rdb.Scan(ctx, uint64(start), search, 10).Result()
+func (m *Model) Scan() tea.Cmd {
+	keys, cursor, err := m.redis.Scan(ctx, uint64(m.cursor), m.search, 10).Result()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	return func() tea.Msg {
 		return scanMsg{keys, int(cursor)}
 	}
 }
 
-func (m model) Init() tea.Cmd {
-	return scan(0, "*")
+func (m Model) Init() tea.Cmd {
+	return m.Scan()
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case scanMsg:
 		m.choices = append(m.choices, msg.keys...)
-    m.cursor = msg.cursor
+		m.cursor = msg.cursor
 
 	// Is it a key press?
 	case tea.KeyMsg:
@@ -70,8 +74,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 
-    case "m":
-      return m, scan(m.cursor, "*")
+		case "m":
+			return m, m.Scan()
 
 		// The "up" and "k" keys move the cursor up
 		case "up", "k":
@@ -102,7 +106,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) View() string {
+func (m Model) View() string {
 	// The header
 	s := "What should we buy at the market?\n\n"
 
