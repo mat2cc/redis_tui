@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -22,6 +23,8 @@ type Model struct {
 	search      string
 	scan_cursor int
 	node        Node
+
+    search_bar Search
 }
 
 func initialModel() Model {
@@ -45,6 +48,7 @@ func initialModel() Model {
 			List:   make([]*PrintItem, 0),
 			cursor: 0,
 		},
+        search_bar: NewSearch(),
 	}
 }
 
@@ -84,6 +88,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Is it a key press?
 	case tea.KeyMsg:
+        if m.search_bar.active {
+            return m.search_bar.Update(msg)
+        }
 
 		// Cool, what was the actual key pressed?
 		switch msg.String() {
@@ -95,8 +102,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "m":
 			return m, m.Scan()
 
+        case "s":
+            m.search_bar.active = true
+            m.search_bar.input.Focus()
+
 		case "e":
-            m.pl.ToggleExpand()
+			m.pl.ToggleExpand()
 			m.pl.Update(updatePL{&m.node})
 
 			// TODO: if on a leaf node, find the previous node an close expand
@@ -127,13 +138,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	s := m.pl.View()
+	main := m.pl.View()
 
 	// The footer
-	s += "\nPress q to quit.\n"
+	main += "\nPress q to quit.\n"
+
+	search := m.search_bar.View()
 
 	// Send the UI for rendering
-	return s
+	return lipgloss.JoinVertical(lipgloss.Top,
+		search,
+		main)
 }
 
 func main() {

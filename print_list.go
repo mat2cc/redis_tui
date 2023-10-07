@@ -52,8 +52,8 @@ func (pl *PrintList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (pl *PrintList) ToggleExpand() {
-    n := pl.List[pl.cursor].Node
-    n.expanded = !n.expanded
+	n := pl.List[pl.cursor].Node
+	n.expanded = !n.expanded
 }
 
 type PrintItem struct {
