@@ -13,8 +13,8 @@ import (
 )
 
 type Model struct {
-	choices  []string         // items on the to-do list
-	selected map[int]struct{} // which to-do items are selected
+	// choices  []string         // items on the to-do list
+	// selected map[int]struct{} // which to-do items are selected
 
 	pl *PrintList
 
@@ -24,18 +24,18 @@ type Model struct {
 	scan_cursor int
 	node        Node
 
-    search_bar Search
+	search_bar Search
 }
 
 func initialModel() Model {
 	return Model{
 		// Our to-do list is a grocery list
-		choices: []string{},
+		// choices: []string{},
 
 		// A map which indicates which choices are selected. We're using
 		// the  map like a mathematical set. The keys refer to the indexes
 		// of the `choices` slice, above.
-		selected: make(map[int]struct{}),
+		// selected: make(map[int]struct{}),
 		redis: redis.NewClient(&redis.Options{
 			Addr:     "localhost:6379",
 			Password: "", // no password set
@@ -48,7 +48,7 @@ func initialModel() Model {
 			List:   make([]*PrintItem, 0),
 			cursor: 0,
 		},
-        search_bar: NewSearch(),
+		search_bar: NewSearch(),
 	}
 }
 
@@ -58,6 +58,18 @@ type scanMsg struct {
 }
 
 var ctx = context.Background()
+
+func (m *Model) reset(search string) {
+  m.scan_cursor = 0
+  m.search = search
+	m.node = Node{
+		Value: search, Children: make([]*Node, 0),
+	}
+	m.pl = &PrintList{
+		List:   make([]*PrintItem, 0),
+		cursor: 0,
+	}
+}
 
 func (m *Model) Scan() tea.Cmd {
 	keys, cursor, err := m.redis.Scan(ctx, uint64(m.scan_cursor), m.search, 10).Result()
@@ -80,17 +92,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			split := strings.Split(key, ":")
 			m.node.AddChild(split[1:])
 		}
-		m.choices = append(m.choices, msg.keys...)
+		// m.choices = append(m.choices, msg.keys...)
 		// m.print_list = GeneratePrintList(&m.node, 0)
 		m.pl.Update(updatePL{&m.node})
 
 		m.scan_cursor = msg.cursor
+	case setTextMessage:
+		m.reset(msg.text)
+		return m, m.Scan()
 
 	// Is it a key press?
 	case tea.KeyMsg:
-        if m.search_bar.active {
-            return m.search_bar.Update(msg)
-        }
+		if m.search_bar.active {
+			ms, cmd := m.search_bar.Update(msg)
+			m.search_bar = ms.(Search)
+
+			return m, cmd
+		}
 
 		// Cool, what was the actual key pressed?
 		switch msg.String() {
@@ -102,9 +120,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "m":
 			return m, m.Scan()
 
-        case "s":
-            m.search_bar.active = true
-            m.search_bar.input.Focus()
+		case "s":
+			m.search_bar.active = true
 
 		case "e":
 			m.pl.ToggleExpand()
@@ -138,14 +155,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	main := m.pl.View()
+  main := fmt.Sprintf("Search Value: %s\n", m.search)
+	main += m.pl.View()
 
 	// The footer
 	main += "\nPress q to quit.\n"
 
 	search := m.search_bar.View()
-
-	// Send the UI for rendering
 	return lipgloss.JoinVertical(lipgloss.Top,
 		search,
 		main)
