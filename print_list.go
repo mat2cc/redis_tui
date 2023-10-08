@@ -1,6 +1,8 @@
 package main
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 type PrintList struct {
 	List   []*PrintItem
@@ -71,13 +73,12 @@ func (pi *PrintItem) Print() string {
 	return str
 }
 
-func GeneratePrintList(nodes *Node, depth int) []*PrintItem {
+func GeneratePrintList(root_node *Node, depth int) []*PrintItem {
 	print_list := []*PrintItem{}
-
-	for _, node := range nodes.Children {
+	for _, node := range root_node.Children {
 		print_list = append(print_list, &PrintItem{node, depth})
 		if node.expanded {
-			print_list = append(print_list, GeneratePrintList(node, depth+1)...)
+			print_list = append(print_list, GeneratePrintList(node, depth + 1)...)
 		}
 	}
 

@@ -59,7 +59,6 @@ func (s Search) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (s Search) View() string {
 	style := lipgloss.NewStyle().Width(100).Border(lipgloss.RoundedBorder())
-	text := "Search\n"
-	text += style.Render(s.input.View())
+	text := style.Render(s.input.View())
 	return text
 }

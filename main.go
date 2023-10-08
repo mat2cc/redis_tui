@@ -41,9 +41,6 @@ func initialModel() Model {
 			Password: "", // no password set
 			DB:       0,  // use default DB
 		}),
-		node: Node{
-			Value: "*", Children: make([]*Node, 0),
-		},
 		pl: &PrintList{
 			List:   make([]*PrintItem, 0),
 			cursor: 0,
@@ -62,9 +59,7 @@ var ctx = context.Background()
 func (m *Model) reset(search string) {
   m.scan_cursor = 0
   m.search = search
-	m.node = Node{
-		Value: search, Children: make([]*Node, 0),
-	}
+	m.node = Node{ }
 	m.pl = &PrintList{
 		List:   make([]*PrintItem, 0),
 		cursor: 0,
@@ -90,10 +85,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case scanMsg:
 		for _, key := range msg.keys {
 			split := strings.Split(key, ":")
-			m.node.AddChild(split[1:])
+			m.node.AddChild(split[0:])
 		}
-		// m.choices = append(m.choices, msg.keys...)
-		// m.print_list = GeneratePrintList(&m.node, 0)
 		m.pl.Update(updatePL{&m.node})
 
 		m.scan_cursor = msg.cursor
@@ -129,17 +122,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			// TODO: if on a leaf node, find the previous node an close expand
 			// maybe look at the depth and find one less depth that at cursor
-
-			// The "enter" key and the spacebar (a literal space) toggle
-			// the selected state for the item that the cursor is pointing at.
-			// case "enter", " ":
-			// 	_, ok := m.selected[m.cursor]
-			// 	if ok {
-			// 		delete(m.selected, m.cursor)
-			// 	} else {
-			// 		m.selected[m.cursor] = struct{}{}
-			// 	}
-			// }
 		}
 	}
 	res, cmd := m.pl.Update(msg)
