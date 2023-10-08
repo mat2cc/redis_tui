@@ -13,17 +13,20 @@ type PrintList struct {
 func (pl *PrintList) View() string {
 	str := ""
 	for i, item := range pl.List {
+		s := ""
 		if len(item.Node.Children) > 0 {
 			if item.Node.expanded {
-				str += "v"
+				s += "v"
 			} else {
-				str += ">"
+				s += ">"
 			}
 		} else {
-			str += " "
+			s += " "
 		}
 
-		str += get_style(i == pl.cursor).Render(item.Print())
+        style_str := get_style(i == pl.cursor).Render(s + item.Print()) + "\n"
+		str += style_str
+		// str += item.Print()
 	}
 
 	return str
@@ -31,7 +34,7 @@ func (pl *PrintList) View() string {
 
 func get_style(on_cursor bool) lipgloss.Style {
 	if on_cursor {
-		return lipgloss.NewStyle().Bold(true).Background(lipgloss.Color("#555555"))
+		return lipgloss.NewStyle().Background(lipgloss.Color("#000000")).Foreground(lipgloss.Color("#ffffff"))
 	} else {
 		return lipgloss.NewStyle()
 	}
@@ -82,7 +85,7 @@ func (pi *PrintItem) Print() string {
 	for i := 0; i < pi.depth; i++ {
 		str += "  "
 	}
-	str += pi.Node.Value + "\n"
+	str += pi.Node.Value
 
 	return str
 }
