@@ -2,6 +2,7 @@ package main
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type PrintList struct {
@@ -12,15 +13,28 @@ type PrintList struct {
 func (pl *PrintList) View() string {
 	str := ""
 	for i, item := range pl.List {
-		if i == pl.cursor {
-			str += ">"
+		if len(item.Node.Children) > 0 {
+			if item.Node.expanded {
+				str += "v"
+			} else {
+				str += ">"
+			}
 		} else {
 			str += " "
 		}
-		str += item.Print()
+
+		str += get_style(i == pl.cursor).Render(item.Print())
 	}
 
 	return str
+}
+
+func get_style(on_cursor bool) lipgloss.Style {
+	if on_cursor {
+		return lipgloss.NewStyle().Bold(true).Background(lipgloss.Color("#555555"))
+	} else {
+		return lipgloss.NewStyle()
+	}
 }
 
 type updatePL struct {
@@ -78,7 +92,7 @@ func GeneratePrintList(root_node *Node, depth int) []*PrintItem {
 	for _, node := range root_node.Children {
 		print_list = append(print_list, &PrintItem{node, depth})
 		if node.expanded {
-			print_list = append(print_list, GeneratePrintList(node, depth + 1)...)
+			print_list = append(print_list, GeneratePrintList(node, depth+1)...)
 		}
 	}
 

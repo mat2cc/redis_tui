@@ -137,8 +137,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-  main := fmt.Sprintf("Search Value: %s\n", m.search)
-	main += m.pl.View()
+	main := m.pl.View()
 
 	// The footer
 	main += "\nPress q to quit.\n"
