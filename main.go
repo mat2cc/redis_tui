@@ -16,7 +16,8 @@ type Model struct {
 	// choices  []string         // items on the to-do list
 	// selected map[int]struct{} // which to-do items are selected
 
-	pl *PrintList
+	pl      *PrintList
+	details *Details
 
 	redis *redis.Client
 
@@ -45,6 +46,10 @@ func initialModel() Model {
 			List:   make([]*PrintItem, 0),
 			cursor: 0,
 		},
+        details: &Details{
+            key: "",
+            open: false,
+        },
 		search_bar: NewSearch(),
 	}
 }
@@ -57,9 +62,9 @@ type scanMsg struct {
 var ctx = context.Background()
 
 func (m *Model) reset(search string) {
-  m.scan_cursor = 0
-  m.search = search
-	m.node = Node{ }
+	m.scan_cursor = 0
+	m.search = search
+	m.node = Node{}
 	m.pl = &PrintList{
 		List:   make([]*PrintItem, 0),
 		cursor: 0,
@@ -131,21 +136,40 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return res, cmd
 	}
 
+	res, cmd = m.details.Update(msg)
+	if a, ok := res.(*Details); ok {
+		m.details = a
+	} else {
+		return res, cmd
+	}
+
 	// Return the updated model to the Bubble Tea runtime for processing.
 	// Note that we're not returning a command.
 	return m, nil
 }
 
 func (m Model) View() string {
-	main := m.pl.View()
+	search := m.search_bar.View()
+	print_list := m.pl.View()
 
 	// The footer
-	main += "\nPress q to quit.\n"
+	footer := "\nPress q to quit.\tPress d for details\n"
 
-	search := m.search_bar.View()
+	var main string
+	if m.details.open {
+		main = lipgloss.JoinHorizontal(lipgloss.Left,
+			print_list,
+			m.details.View(),
+		)
+	} else {
+		main = print_list
+	}
+
 	return lipgloss.JoinVertical(lipgloss.Top,
 		search,
-		main)
+		main,
+		footer,
+	)
 }
 
 func main() {
