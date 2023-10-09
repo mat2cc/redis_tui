@@ -10,23 +10,24 @@ type Details struct {
     open bool
 }
 
-func (dm Details) Init() tea.Cmd {
+func (dm *Details) Init() tea.Cmd {
 	return nil 
 }
 
 
-func (dm Details) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (dm *Details) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     switch msg := msg.(type) {
     case tea.KeyMsg:
         switch msg.String() {
         case "d":
             dm.open = !dm.open
+            return dm, nil
         }
     }
     return dm, nil
 }
 
-func (dm Details) View() string {
+func (dm *Details) View() string {
     style := lipgloss.NewStyle().Border(lipgloss.RoundedBorder())
     return style.Render("Details")
 }

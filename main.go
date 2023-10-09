@@ -46,10 +46,10 @@ func initialModel() Model {
 			List:   make([]*PrintItem, 0),
 			cursor: 0,
 		},
-        details: &Details{
-            key: "",
-            open: false,
-        },
+		details: &Details{
+			key:  "",
+			open: false,
+		},
 		search_bar: NewSearch(),
 	}
 }
@@ -139,10 +139,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	res, cmd = m.details.Update(msg)
 	if a, ok := res.(*Details); ok {
 		m.details = a
-	} else {
-		return res, cmd
-	}
-
+	} 
 	// Return the updated model to the Bubble Tea runtime for processing.
 	// Note that we're not returning a command.
 	return m, nil

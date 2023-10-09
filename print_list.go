@@ -16,12 +16,12 @@ func (pl *PrintList) View() string {
 		s := ""
 		if len(item.Node.Children) > 0 {
 			if item.Node.expanded {
-				s += "v"
+				s += "v "
 			} else {
-				s += ">"
+				s += "> "
 			}
 		} else {
-			s += " "
+			s += "  "
 		}
 
         style_str := get_style(i == pl.cursor).Render(s + item.Print()) + "\n"
