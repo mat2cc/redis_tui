@@ -9,6 +9,7 @@ import (
 type Search struct {
 	input  textinput.Model
 	active bool
+	width  int
 }
 
 func NewSearch() Search {
@@ -39,6 +40,8 @@ func (s Search) createTextMessage() tea.Cmd {
 func (s Search) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		s.width = msg.Width
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
@@ -58,7 +61,11 @@ func (s Search) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (s Search) View() string {
-	style := lipgloss.NewStyle().Width(100).Border(lipgloss.RoundedBorder())
+	style := lipgloss.
+		NewStyle().
+		Width(s.width - 10). // subtract 2 for the border
+		Border(lipgloss.RoundedBorder())
+
 	text := style.Render(s.input.View())
 	return text
 }

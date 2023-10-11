@@ -85,12 +85,36 @@ func (m Model) Init() tea.Cmd {
 	return m.Scan()
 }
 
+func (m *Model) GetDetails(node *Node) tea.Cmd {
+	key := node.FullKey
+	res, err := m.redis.Get(ctx, key).Result()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return func() tea.Msg {
+		return setDetailsMessage{key, res}
+	}
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		var cmd tea.Cmd
+		var cmds []tea.Cmd
+		var model tea.Model
+
+		model, cmd = m.search_bar.Update(msg)
+		m.search_bar = model.(Search)
+
+		model, cmd = m.pl.Update(msg)
+		m.pl = model.(*PrintList)
+
+		cmds = append(cmds, cmd)
+		// return m, tea.Batch(cmds...)
 	case scanMsg:
 		for _, key := range msg.keys {
 			split := strings.Split(key, ":")
-			m.node.AddChild(split[0:])
+			m.node.AddChild(split, key)
 		}
 		m.pl.Update(updatePL{&m.node})
 
@@ -121,6 +145,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "s":
 			m.search_bar.active = true
 
+		case "enter":
+      node := m.pl.List[m.pl.cursor].Node
+      if len(node.Children) == 0 {
+        cmd := m.GetDetails(node)
+        if !m.details.open {
+          m.details.open = true
+        }
+        return m, cmd
+      }
 		case "e":
 			m.pl.ToggleExpand()
 			m.pl.Update(updatePL{&m.node})
@@ -139,7 +172,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	res, cmd = m.details.Update(msg)
 	if a, ok := res.(*Details); ok {
 		m.details = a
-	} 
+	}
 	// Return the updated model to the Bubble Tea runtime for processing.
 	// Note that we're not returning a command.
 	return m, nil

@@ -7,6 +7,7 @@ import (
 
 type PrintList struct {
 	List   []*PrintItem
+	width  int
 	cursor int
 }
 
@@ -23,13 +24,14 @@ func (pl *PrintList) View() string {
 		} else {
 			s += "  "
 		}
-
-        style_str := get_style(i == pl.cursor).Render(s + item.Print()) + "\n"
-		str += style_str
-		// str += item.Print()
+		str += get_style(i == pl.cursor).Render(s+item.Print()) + "\n"
 	}
 
-	return str
+	style := lipgloss.
+		NewStyle().
+    Width(pl.width / 2 - 10). // subtract 2 for the border
+		Border(lipgloss.RoundedBorder())
+	return style.Render(str)
 }
 
 func get_style(on_cursor bool) lipgloss.Style {
@@ -50,6 +52,8 @@ func (pl *PrintList) Init() tea.Cmd {
 
 func (pl *PrintList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+  case tea.WindowSizeMsg:
+    pl.width = msg.Width
 	case updatePL:
 		msg.root_node.expanded = !msg.root_node.expanded
 		pl.List = GeneratePrintList(msg.root_node, 0)
