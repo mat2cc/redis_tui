@@ -1,21 +1,29 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
+var (
+	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	noStyle      = lipgloss.NewStyle()
+)
+
 type Search struct {
-	input  textinput.Model
-	active bool
-	width  int
+	input      textinput.Model
+	active     bool
+	width      int
+	old_search string
 }
 
 func NewSearch() Search {
 	ti := textinput.New()
 	ti.Placeholder = "Search"
-	ti.Focus()
+	ti.SetValue("*")
 	ti.Width = 100
 
 	return Search{
@@ -24,17 +32,44 @@ func NewSearch() Search {
 }
 
 func (s Search) Init() tea.Cmd {
-	return textinput.Blink
+	return nil
+}
+
+func (s *Search) createTextMessage() tea.Cmd {
+	if !strings.Contains(s.input.Value(), "*") {
+		s.input.SetValue(s.input.Value() + "*")
+	}
+	s.ToggleActive(false)
+	return func() tea.Msg {
+		return setTextMessage{s.input.Value()}
+	}
+}
+
+type setSearchString struct {
+	text string
 }
 
 type setTextMessage struct {
 	text string
 }
 
-func (s Search) createTextMessage() tea.Cmd {
-	return func() tea.Msg {
-		return setTextMessage{s.input.Value()}
+func (s *Search) ToggleActive(active bool) {
+	s.active = active
+	if active {
+        s.old_search = s.input.Value()
+        s.input.SetValue("")
+
+		s.input.Focus()
+        s.input.PromptStyle = focusedStyle
+        s.input.TextStyle = focusedStyle
+	} else {
+		s.input.Blur()
+        s.input.PromptStyle = noStyle
+        s.input.TextStyle = noStyle
 	}
+	//s.input.Cursor.Style = focusedStyle
+	//s.input.TextStyle = focusedStyle
+	//s.input.PromptStyle = focusedStyle
 }
 
 func (s Search) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -42,16 +77,16 @@ func (s Search) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		s.width = msg.Width
+	case setSearchString:
+		s.input.SetValue(msg.text)
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
 			cmd = s.createTextMessage()
-			s.active = false
-			s.input.SetValue("")
 			return s, cmd
 		case tea.KeyEscape:
-			s.active = false
-			s.input.SetValue("")
+			s.ToggleActive(false)
+			s.input.SetValue(s.old_search)
 		case tea.KeyCtrlC:
 			return s, tea.Quit
 		}

@@ -143,7 +143,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.Scan()
 
 		case "s":
-			m.search_bar.active = true
+			m.search_bar.ToggleActive(true)
 
 		case "enter":
       node := m.pl.List[m.pl.cursor].Node
