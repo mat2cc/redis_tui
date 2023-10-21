@@ -8,10 +8,11 @@ import (
 )
 
 type Details struct {
-	key   string
-	data  string
-	open  bool
-	width int
+	key        string
+	data       string
+	redis_type string
+	open       bool
+	width      int
 }
 
 func (dm *Details) Init() tea.Cmd {
@@ -19,15 +20,17 @@ func (dm *Details) Init() tea.Cmd {
 }
 
 type setDetailsMessage struct {
-	key   string
-	data  string
+	key        string
+	redis_type string
+	data       string
 }
 
 func (dm *Details) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-  case setDetailsMessage:
-    dm.key = msg.key
-    dm.data = msg.data
+	case setDetailsMessage:
+		dm.key = msg.key
+		dm.redis_type = msg.redis_type
+		dm.data = msg.data
 	case tea.WindowSizeMsg:
 		dm.width = msg.Width
 	case tea.KeyMsg:
@@ -46,6 +49,6 @@ func (dm *Details) View() string {
 		Width(dm.width/2 - 10).
 		Border(lipgloss.RoundedBorder())
 
-  out := fmt.Sprintf("Key: %s\nData: %s", dm.key, dm.data)
+        out := fmt.Sprintf("Key: %s\nType: %s\n\n%s", dm.key, dm.redis_type, dm.data)
 	return style.Render(out)
 }

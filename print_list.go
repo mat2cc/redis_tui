@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -14,22 +16,24 @@ type PrintList struct {
 func (pl *PrintList) View() string {
 	str := ""
 	for i, item := range pl.List {
-		s := ""
+		prexfix := ""
+		postfix := ""
 		if len(item.Node.Children) > 0 {
 			if item.Node.expanded {
-				s += "v "
+				prexfix += "v "
 			} else {
-				s += "> "
+				prexfix += "> "
 			}
 		} else {
-			s += "  "
+            postfix = fmt.Sprintf(" [%s]", item.Node.RedisType)
+			prexfix += "  "
 		}
-		str += get_style(i == pl.cursor).Render(s+item.Print()) + "\n"
+		str += get_style(i == pl.cursor).Render(prexfix+item.Print()+postfix) + "\n"
 	}
 
 	style := lipgloss.
 		NewStyle().
-    Width(pl.width / 2 - 10). // subtract 2 for the border
+		Width(pl.width/2 - 10). // subtract 2 for the border
 		Border(lipgloss.RoundedBorder())
 	return style.Render(str)
 }
@@ -52,8 +56,8 @@ func (pl *PrintList) Init() tea.Cmd {
 
 func (pl *PrintList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-  case tea.WindowSizeMsg:
-    pl.width = msg.Width
+	case tea.WindowSizeMsg:
+		pl.width = msg.Width
 	case updatePL:
 		msg.root_node.expanded = !msg.root_node.expanded
 		pl.List = GeneratePrintList(msg.root_node, 0)
@@ -75,8 +79,12 @@ func (pl *PrintList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (pl *PrintList) ToggleExpand() {
-	n := pl.List[pl.cursor].Node
+	n := pl.GetCurrent()
 	n.expanded = !n.expanded
+}
+
+func (pl *PrintList) GetCurrent() *Node {
+	return pl.List[pl.cursor].Node
 }
 
 type PrintItem struct {
@@ -89,7 +97,7 @@ func (pi *PrintItem) Print() string {
 	for i := 0; i < pi.depth; i++ {
 		str += "  "
 	}
-	str += pi.Node.Value
+    str += pi.Node.Value
 
 	return str
 }

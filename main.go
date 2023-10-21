@@ -9,6 +9,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mat2cc/redis_tui/redis_type"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -65,14 +66,20 @@ func (m *Model) reset(search string) {
 	m.scan_cursor = 0
 	m.search = search
 	m.node = Node{}
+	m.details = &Details{
+		key:   "",
+		open:  m.details.open,
+		width: m.details.width,
+	}
 	m.pl = &PrintList{
 		List:   make([]*PrintItem, 0),
 		cursor: 0,
+		width:  m.pl.width,
 	}
 }
 
 func (m *Model) Scan() tea.Cmd {
-	keys, cursor, err := m.redis.Scan(ctx, uint64(m.scan_cursor), m.search, 10).Result()
+	keys, cursor, err := m.redis.Scan(ctx, uint64(m.scan_cursor), m.search, 1000).Result()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -86,35 +93,47 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m *Model) GetDetails(node *Node) tea.Cmd {
-	key := node.FullKey
-	res, err := m.redis.Get(ctx, key).Result()
+	rt, err := m.redis.Type(ctx, node.FullKey).Result()
 	if err != nil {
 		log.Fatal(err)
 	}
+	var res redis_type.RedisType
+	switch rt {
+	case "string":
+		res = GenerateStringType(m.redis, node)
+	case "list":
+		res = GenerateListType(m.redis, node)
+	case "set":
+		res = GenerateSetType(m.redis, node)
+	case "zset":
+		res = GenerateZSetType(m.redis, node)
+	case "hash":
+		res = GenerateHashType(m.redis, node)
+	case "stream":
+		res = GenerateStreamType(m.redis, node)
+	}
+
 	return func() tea.Msg {
-		return setDetailsMessage{key, res}
+		if res == nil {
+			return setDetailsMessage{node.FullKey, "", "Type Not implemented"}
+		}
+		return setDetailsMessage{node.FullKey, node.RedisType, res.Print()}
 	}
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		var cmd tea.Cmd
-		var cmds []tea.Cmd
-		var model tea.Model
+		sbm, _ := m.search_bar.Update(msg)
+		m.search_bar = sbm.(Search)
 
-		model, cmd = m.search_bar.Update(msg)
-		m.search_bar = model.(Search)
+		plm, _ := m.pl.Update(msg)
+		m.pl = plm.(*PrintList)
 
-		model, cmd = m.pl.Update(msg)
-		m.pl = model.(*PrintList)
-
-		cmds = append(cmds, cmd)
-		// return m, tea.Batch(cmds...)
 	case scanMsg:
 		for _, key := range msg.keys {
 			split := strings.Split(key, ":")
-			m.node.AddChild(split, key)
+			m.node.AddChild(split, key, m.redis)
 		}
 		m.pl.Update(updatePL{&m.node})
 
@@ -146,14 +165,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.search_bar.ToggleActive(true)
 
 		case "enter":
-      node := m.pl.List[m.pl.cursor].Node
-      if len(node.Children) == 0 {
-        cmd := m.GetDetails(node)
-        if !m.details.open {
-          m.details.open = true
-        }
-        return m, cmd
-      }
+			node := m.pl.GetCurrent()
+			if node != nil && len(node.Children) == 0 {
+				cmd := m.GetDetails(node)
+				if !m.details.open {
+					m.details.open = true
+				}
+				return m, cmd
+			}
 		case "e":
 			m.pl.ToggleExpand()
 			m.pl.Update(updatePL{&m.node})
@@ -203,7 +222,10 @@ func (m Model) View() string {
 }
 
 func main() {
-	p := tea.NewProgram(initialModel())
+	p := tea.NewProgram(
+		initialModel(),
+		tea.WithAltScreen(),
+	)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
