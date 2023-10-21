@@ -17,8 +17,6 @@ type Model struct {
 	// choices  []string         // items on the to-do list
 	// selected map[int]struct{} // which to-do items are selected
 
-	pl      *PrintList
-	details *Details
 
 	redis *redis.Client
 
@@ -26,7 +24,11 @@ type Model struct {
 	scan_cursor int
 	node        Node
 
+    // models
+	pl      *PrintList
+	details *Details
 	search_bar Search
+    tpl *TablePrintList
 }
 
 func initialModel() Model {
@@ -52,6 +54,7 @@ func initialModel() Model {
 			open: false,
 		},
 		search_bar: NewSearch(),
+        tpl: NewTable(),
 	}
 }
 
@@ -181,7 +184,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// maybe look at the depth and find one less depth that at cursor
 		}
 	}
-	res, cmd := m.pl.Update(msg)
+
+    res, cmd := m.tpl.Update(msg)
+	if a, ok := res.(*TablePrintList); ok {
+		m.tpl = a
+	} else {
+		return res, cmd
+	}
+	res, cmd = m.pl.Update(msg)
 	if a, ok := res.(*PrintList); ok {
 		m.pl = a
 	} else {
@@ -200,6 +210,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	search := m.search_bar.View()
 	print_list := m.pl.View()
+    // print_list := m.tpl.View()
 
 	// The footer
 	footer := "\nPress q to quit.\tPress d for details\n"
