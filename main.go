@@ -17,18 +17,17 @@ type Model struct {
 	// choices  []string         // items on the to-do list
 	// selected map[int]struct{} // which to-do items are selected
 
-
 	redis *redis.Client
 
 	search      string
 	scan_cursor int
 	node        Node
 
-    // models
-	pl      *PrintList
-	details *Details
+	// models
+	pl         *PrintList
+	details    *Details
 	search_bar Search
-    tpl *TablePrintList
+	tpl        *TablePrintList
 }
 
 func initialModel() Model {
@@ -54,7 +53,7 @@ func initialModel() Model {
 			open: false,
 		},
 		search_bar: NewSearch(),
-        tpl: NewTable(),
+		tpl:        NewTable(),
 	}
 }
 
@@ -139,6 +138,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.node.AddChild(split, key, m.redis)
 		}
 		m.pl.Update(updatePL{&m.node})
+		m.tpl.Update(updatePL{&m.node})
 
 		m.scan_cursor = msg.cursor
 	case setTextMessage:
@@ -179,13 +179,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "e":
 			m.pl.ToggleExpand()
 			m.pl.Update(updatePL{&m.node})
+			m.tpl.Update(updatePL{&m.node})
 
 			// TODO: if on a leaf node, find the previous node an close expand
 			// maybe look at the depth and find one less depth that at cursor
 		}
 	}
 
-    res, cmd := m.tpl.Update(msg)
+	res, cmd := m.tpl.Update(msg)
 	if a, ok := res.(*TablePrintList); ok {
 		m.tpl = a
 	} else {
@@ -209,8 +210,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	search := m.search_bar.View()
-	print_list := m.pl.View()
-    // print_list := m.tpl.View()
+	// print_list := m.pl.View()
+	print_list := m.tpl.View()
 
 	// The footer
 	footer := "\nPress q to quit.\tPress d for details\n"
