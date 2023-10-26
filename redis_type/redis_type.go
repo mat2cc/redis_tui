@@ -20,7 +20,7 @@ const (
 )
 
 type RedisType interface {
-	Print() string
+	Print(table_width int) string
 }
 
 type RedisString struct {
@@ -63,7 +63,7 @@ func tableStyles() table.Styles {
 	return s
 }
 
-func StringArrOut(arr *[]string) string {
+func StringArrOut(arr *[]string, width int) string {
 	out := ""
 	var rows []table.Row
 	for i, data := range *arr {
@@ -77,7 +77,7 @@ func StringArrOut(arr *[]string) string {
 		table.WithColumns(
 			[]table.Column{
 				{Title: "", Width: 4},
-				{Title: "Data", Width: 100},
+				{Title: "Data", Width: width - 8},
 			},
 		),
 		table.WithRows(rows),
@@ -87,11 +87,11 @@ func StringArrOut(arr *[]string) string {
 	return t.View()
 }
 
-func (rs *RedisString) Print() string {
+func (rs *RedisString) Print(table_width int) string {
 	return rs.Data
 }
 
-func (rh *RedisHash) Print() string {
+func (rh *RedisHash) Print(table_width int) string {
 	out := ""
 	for key, data := range rh.Data {
 		out += fmt.Sprintf("%s: %s\n", key, data)
@@ -99,19 +99,19 @@ func (rh *RedisHash) Print() string {
 	return out
 }
 
-func (rl *RedisList) Print() string {
-	return StringArrOut(&rl.Data)
+func (rl *RedisList) Print(table_width int) string {
+	return StringArrOut(&rl.Data, table_width)
 }
 
-func (rs *RedisSet) Print() string {
-	return StringArrOut(&rs.Data)
+func (rs *RedisSet) Print(table_width int) string {
+	return StringArrOut(&rs.Data, table_width)
 }
 
-func (gzs *RedisZSet) Print() string {
-	return StringArrOut(&gzs.Data)
+func (gzs *RedisZSet) Print(table_width int) string {
+	return StringArrOut(&gzs.Data, table_width)
 }
 
-func (rh *RedisStream) Print() string {
+func (rh *RedisStream) Print(table_width int) string {
 	out := ""
 	for _, data := range rh.Data {
 		out += fmt.Sprintf("%s: %s\n", data.ID, data.Values)

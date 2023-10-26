@@ -22,7 +22,8 @@ func (pl *TablePrintList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		pl.table.SetWidth(msg.Width/2 - 4)
+    pl.table.SetColumns(createTableCols(pl.width))
+		pl.table.SetWidth(pl.width)
 		pl.table.SetHeight(msg.Height - 8)
 
 	case updatePL:
@@ -71,28 +72,30 @@ func (pl *TablePrintList) GetRows() []table.Row {
 }
 
 func (pl *TablePrintList) View() string {
-
 	style := lipgloss.
 		NewStyle().
+    Width(pl.width). // subtract 2 for the border
 		Border(lipgloss.RoundedBorder())
 	return style.Render(pl.table.View())
 }
 
-func NewTable() *TablePrintList {
-	columns := []table.Column{
+func createTableCols(width int) []table.Column{
+	return []table.Column{
 		{Title: "", Width: 1},
-		{Title: "", Width: 80},
+		{Title: "", Width: width - 4 },
 	}
+}
+
+func NewTable() *TablePrintList {
 	rows := []table.Row{}
 
 	t := table.New(
-		table.WithColumns(columns),
+		table.WithColumns(createTableCols(1)),
 		table.WithRows(rows),
 		table.WithFocused(true),
 	)
 
 	return &TablePrintList{
 		table: t,
-		width: 80,
 	}
 }

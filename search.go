@@ -20,18 +20,18 @@ type Search struct {
 	old_search string
 }
 
-func NewSearch() Search {
+func NewSearch() *Search {
 	ti := textinput.New()
 	ti.Placeholder = "Search"
 	ti.SetValue("*")
 	ti.Width = 100
 
-	return Search{
+	return &Search{
 		input: ti,
 	}
 }
 
-func (s Search) Init() tea.Cmd {
+func (s *Search) Init() tea.Cmd {
 	return nil
 }
 
@@ -72,7 +72,7 @@ func (s *Search) ToggleActive(active bool) {
 	//s.input.PromptStyle = focusedStyle
 }
 
-func (s Search) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (s *Search) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -95,10 +95,10 @@ func (s Search) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return s, cmd
 }
 
-func (s Search) View() string {
+func (s *Search) View() string {
 	style := lipgloss.
 		NewStyle().
-		Width(s.width - 2). // subtract 2 for the border
+		Width(s.width - MARGIN). // subtract 2 for the border
 		Border(lipgloss.RoundedBorder())
 
 	text := style.Render(s.input.View())

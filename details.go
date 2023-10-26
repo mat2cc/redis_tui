@@ -31,8 +31,6 @@ func (dm *Details) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		dm.key = msg.key
 		dm.redis_type = msg.redis_type
 		dm.data = msg.data
-	case tea.WindowSizeMsg:
-		dm.width = msg.Width
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "d":
@@ -46,9 +44,9 @@ func (dm *Details) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (dm *Details) View() string {
 	style := lipgloss.
 		NewStyle().
-		Width(dm.width/2 - 10).
+		Width(dm.width).
 		Border(lipgloss.RoundedBorder())
 
-        out := fmt.Sprintf("Key: %s\nType: %s\n\n%s", dm.key, dm.redis_type, dm.data)
+	out := fmt.Sprintf("Key: %s\nType: %s\n\n%s", dm.key, dm.redis_type, dm.data)
 	return style.Render(out)
 }

@@ -13,6 +13,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+const MARGIN = 2 
+
 type Model struct {
 	// choices  []string         // items on the to-do list
 	// selected map[int]struct{} // which to-do items are selected
@@ -26,7 +28,7 @@ type Model struct {
 	// models
 	pl         *PrintList
 	details    *Details
-	search_bar Search
+	search_bar *Search
 	tpl        *TablePrintList
 }
 
@@ -50,7 +52,7 @@ func initialModel() Model {
 		},
 		details: &Details{
 			key:  "",
-			open: false,
+			open: true,
 		},
 		search_bar: NewSearch(),
 		tpl:        NewTable(),
@@ -119,18 +121,15 @@ func (m *Model) GetDetails(node *Node) tea.Cmd {
 		if res == nil {
 			return setDetailsMessage{node.FullKey, "", "Type Not implemented"}
 		}
-		return setDetailsMessage{node.FullKey, node.RedisType, res.Print()}
+		return setDetailsMessage{node.FullKey, node.RedisType, res.Print(m.details.width)}
 	}
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		sbm, _ := m.search_bar.Update(msg)
-		m.search_bar = sbm.(Search)
-
-		plm, _ := m.pl.Update(msg)
-		m.pl = plm.(*PrintList)
+    m.tpl.width = msg.Width / 2 - MARGIN
+    m.details.width = msg.Width / 2 - MARGIN
 
 	case scanMsg:
 		for _, key := range msg.keys {
@@ -149,7 +148,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if m.search_bar.active {
 			ms, cmd := m.search_bar.Update(msg)
-			m.search_bar = ms.(Search)
+			m.search_bar = ms.(*Search)
 
 			return m, cmd
 		}
@@ -166,6 +165,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "s":
 			m.search_bar.ToggleActive(true)
+      return m, nil
 
 		case "enter":
 			node := m.pl.GetCurrent()
@@ -192,6 +192,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	} else {
 		return res, cmd
 	}
+
+	res, cmd = m.search_bar.Update(msg)
+	if a, ok := res.(*Search); ok {
+		m.search_bar = a
+	} else {
+		return res, cmd
+	}
+
 	res, cmd = m.pl.Update(msg)
 	if a, ok := res.(*PrintList); ok {
 		m.pl = a
