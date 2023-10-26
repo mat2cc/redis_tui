@@ -25,7 +25,7 @@ func (pl *PrintList) View() string {
 				prexfix += "> "
 			}
 		} else {
-            postfix = fmt.Sprintf(" [%s]", item.Node.RedisType)
+			postfix = fmt.Sprintf(" [%s]", item.Node.RedisType)
 			prexfix += "  "
 		}
 		str += get_style(i == pl.cursor).Render(prexfix+item.Print()+postfix) + "\n"
@@ -97,7 +97,7 @@ func (pi *PrintItem) Print() string {
 	for i := 0; i < pi.depth; i++ {
 		str += "  "
 	}
-    str += pi.Node.Value
+	str += pi.Node.Value
 
 	return str
 }

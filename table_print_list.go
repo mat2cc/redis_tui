@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type TablePrintList struct {
@@ -20,10 +21,14 @@ func (pl *TablePrintList) Init() tea.Cmd {
 func (pl *TablePrintList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
-  case updatePL:
+	case tea.WindowSizeMsg:
+		pl.table.SetWidth(msg.Width/2 - 4)
+		pl.table.SetHeight(msg.Height - 8)
+
+	case updatePL:
 		msg.root_node.expanded = !msg.root_node.expanded
 		pl.List = GeneratePrintList(msg.root_node, 0)
-    pl.table.SetRows(pl.GetRows())
+		pl.table.SetRows(pl.GetRows())
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc":
@@ -46,8 +51,8 @@ func (pl *TablePrintList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (pl *TablePrintList) GetRows() []table.Row {
-  rows := []table.Row{}
-  for _, item := range pl.List {
+	rows := []table.Row{}
+	for _, item := range pl.List {
 		prexfix := ""
 		postfix := ""
 		if len(item.Node.Children) > 0 {
@@ -60,13 +65,17 @@ func (pl *TablePrintList) GetRows() []table.Row {
 			postfix = fmt.Sprintf(" [%s]", item.Node.RedisType)
 			prexfix += ""
 		}
-    rows = append(rows, table.Row{prexfix, item.Print() + postfix})
-  }
-  return rows
+		rows = append(rows, table.Row{prexfix, item.Print() + postfix})
+	}
+	return rows
 }
 
 func (pl *TablePrintList) View() string {
-	return pl.table.View()
+
+	style := lipgloss.
+		NewStyle().
+		Border(lipgloss.RoundedBorder())
+	return style.Render(pl.table.View())
 }
 
 func NewTable() *TablePrintList {
@@ -79,7 +88,6 @@ func NewTable() *TablePrintList {
 	t := table.New(
 		table.WithColumns(columns),
 		table.WithRows(rows),
-		table.WithWidth(80),
 		table.WithFocused(true),
 	)
 

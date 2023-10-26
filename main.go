@@ -214,7 +214,7 @@ func (m Model) View() string {
 	print_list := m.tpl.View()
 
 	// The footer
-	footer := "\nPress q to quit.\tPress d for details\n"
+	footer := "Press q to quit.\tPress d for details"
 
 	var main string
 	if m.details.open {
