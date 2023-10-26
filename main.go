@@ -16,9 +16,6 @@ import (
 const MARGIN = 2 
 
 type Model struct {
-	// choices  []string         // items on the to-do list
-	// selected map[int]struct{} // which to-do items are selected
-
 	redis *redis.Client
 
 	search      string
@@ -26,7 +23,6 @@ type Model struct {
 	node        Node
 
 	// models
-	pl         *PrintList
 	details    *Details
 	search_bar *Search
 	tpl        *TablePrintList
@@ -34,22 +30,11 @@ type Model struct {
 
 func initialModel() Model {
 	return Model{
-		// Our to-do list is a grocery list
-		// choices: []string{},
-
-		// A map which indicates which choices are selected. We're using
-		// the  map like a mathematical set. The keys refer to the indexes
-		// of the `choices` slice, above.
-		// selected: make(map[int]struct{}),
 		redis: redis.NewClient(&redis.Options{
 			Addr:     "localhost:6379",
 			Password: "", // no password set
 			DB:       0,  // use default DB
 		}),
-		pl: &PrintList{
-			List:   make([]*PrintItem, 0),
-			cursor: 0,
-		},
 		details: &Details{
 			key:  "",
 			open: true,
@@ -74,11 +59,6 @@ func (m *Model) reset(search string) {
 		key:   "",
 		open:  m.details.open,
 		width: m.details.width,
-	}
-	m.pl = &PrintList{
-		List:   make([]*PrintItem, 0),
-		cursor: 0,
-		width:  m.pl.width,
 	}
 }
 
@@ -136,7 +116,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			split := strings.Split(key, ":")
 			m.node.AddChild(split, key, m.redis)
 		}
-		m.pl.Update(updatePL{&m.node})
 		m.tpl.Update(updatePL{&m.node})
 
 		m.scan_cursor = msg.cursor
@@ -168,7 +147,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
       return m, nil
 
 		case "enter":
-			node := m.pl.GetCurrent()
+			node := m.tpl.GetCurrent()
 			if node != nil && len(node.Children) == 0 {
 				cmd := m.GetDetails(node)
 				if !m.details.open {
@@ -177,8 +156,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, cmd
 			}
 		case "e":
-			m.pl.ToggleExpand()
-			m.pl.Update(updatePL{&m.node})
+			m.tpl.ToggleExpand()
 			m.tpl.Update(updatePL{&m.node})
 
 			// TODO: if on a leaf node, find the previous node an close expand
@@ -200,13 +178,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return res, cmd
 	}
 
-	res, cmd = m.pl.Update(msg)
-	if a, ok := res.(*PrintList); ok {
-		m.pl = a
-	} else {
-		return res, cmd
-	}
-
 	res, cmd = m.details.Update(msg)
 	if a, ok := res.(*Details); ok {
 		m.details = a
@@ -218,7 +189,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	search := m.search_bar.View()
-	// print_list := m.pl.View()
 	print_list := m.tpl.View()
 
 	// The footer

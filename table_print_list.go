@@ -18,6 +18,11 @@ func (pl *TablePrintList) Init() tea.Cmd {
 	return nil
 }
 
+func (pl *TablePrintList) ToggleExpand() {
+	n := pl.GetCurrent()
+	n.expanded = !n.expanded
+}
+
 func (pl *TablePrintList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
@@ -69,6 +74,10 @@ func (pl *TablePrintList) GetRows() []table.Row {
 		rows = append(rows, table.Row{prexfix, item.Print() + postfix})
 	}
 	return rows
+}
+
+func (pl *TablePrintList) GetCurrent() *Node {
+  return pl.List[pl.table.Cursor()].Node
 }
 
 func (pl *TablePrintList) View() string {
