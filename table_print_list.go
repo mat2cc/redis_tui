@@ -10,6 +10,7 @@ import (
 
 type TablePrintList struct {
 	width int
+	height int
 	table table.Model
 	List  []*PrintItem
 }
@@ -29,27 +30,12 @@ func (pl *TablePrintList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
     pl.table.SetColumns(createTableCols(pl.width))
 		pl.table.SetWidth(pl.width)
-		pl.table.SetHeight(msg.Height - 8)
+		pl.table.SetHeight(pl.height - 2) // subtract 2 for the border
 
 	case updatePL:
 		msg.root_node.expanded = !msg.root_node.expanded
 		pl.List = GeneratePrintList(msg.root_node, 0)
 		pl.table.SetRows(pl.GetRows())
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
-			if pl.table.Focused() {
-				pl.table.Blur()
-			} else {
-				pl.table.Focus()
-			}
-		case "q", "ctrl+c":
-			return pl, tea.Quit
-		case "x":
-			return pl, tea.Batch(
-				tea.Printf("Let's go to %s!", pl.table.SelectedRow()[1]),
-			)
-		}
 	}
 	pl.table, cmd = pl.table.Update(msg)
 
@@ -84,6 +70,7 @@ func (pl *TablePrintList) View() string {
 	style := lipgloss.
 		NewStyle().
     Width(pl.width). // subtract 2 for the border
+    Height(pl.height).
 		Border(lipgloss.RoundedBorder())
 	return style.Render(pl.table.View())
 }

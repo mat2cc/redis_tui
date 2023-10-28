@@ -7,13 +7,15 @@ import (
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/mat2cc/redis_tui/redis_type"
 	"github.com/redis/go-redis/v9"
 )
 
-const MARGIN = 2 
+const MARGIN = 2
 
 type Model struct {
 	redis *redis.Client
@@ -23,12 +25,16 @@ type Model struct {
 	node        Node
 
 	// models
+	help       help.Model
 	details    *Details
 	search_bar *Search
 	tpl        *TablePrintList
 }
 
 func initialModel() Model {
+	help := help.New()
+	help.ShowAll = false
+
 	return Model{
 		redis: redis.NewClient(&redis.Options{
 			Addr:     "localhost:6379",
@@ -37,10 +43,10 @@ func initialModel() Model {
 		}),
 		details: &Details{
 			key:  "",
-			open: true,
 		},
 		search_bar: NewSearch(),
 		tpl:        NewTable(),
+		help:       help,
 	}
 }
 
@@ -57,7 +63,6 @@ func (m *Model) reset(search string) {
 	m.node = Node{}
 	m.details = &Details{
 		key:   "",
-		open:  m.details.open,
 		width: m.details.width,
 	}
 }
@@ -108,8 +113,11 @@ func (m *Model) GetDetails(node *Node) tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-    m.tpl.width = msg.Width / 2 - MARGIN
-    m.details.width = msg.Width / 2 - MARGIN
+		m.tpl.width = msg.Width/2 - MARGIN
+		m.details.width = msg.Width/2 - MARGIN
+
+    m.tpl.height = msg.Height - 8 
+    m.details.height = msg.Height - 8 
 
 	case scanMsg:
 		for _, key := range msg.keys {
@@ -131,37 +139,33 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return m, cmd
 		}
-
-		// Cool, what was the actual key pressed?
-		switch msg.String() {
-
-		// These keys should exit the program.
-		case "ctrl+c", "q":
+		switch {
+		case key.Matches(msg, default_keys.Quit):
 			return m, tea.Quit
-
-		case "m":
-			return m, m.Scan()
-
-		case "s":
+		case key.Matches(msg, default_keys.Search):
 			m.search_bar.ToggleActive(true)
-      return m, nil
-
-		case "enter":
+			return m, nil
+		case key.Matches(msg, default_keys.Enter):
 			node := m.tpl.GetCurrent()
 			if node != nil && len(node.Children) == 0 {
 				cmd := m.GetDetails(node)
-				if !m.details.open {
-					m.details.open = true
-				}
 				return m, cmd
+			} else if node != nil {
+				m.tpl.ToggleExpand()
+				m.tpl.Update(updatePL{&m.node})
 			}
-		case "e":
-			m.tpl.ToggleExpand()
-			m.tpl.Update(updatePL{&m.node})
-
-			// TODO: if on a leaf node, find the previous node an close expand
-			// maybe look at the depth and find one less depth that at cursor
+		case key.Matches(msg, default_keys.Scan):
+			return m, m.Scan()
+		case key.Matches(msg, default_keys.Help):
+      m.help.ShowAll = !m.help.ShowAll
+      return m, nil
+		case key.Matches(msg, default_keys.Search):
+			m.search_bar.ToggleActive(true)
+			return m, nil
 		}
+		// TODO: if on a leaf node, find the previous node an close expand
+		// maybe look at the depth and find one less depth that at cursor
+
 	}
 
 	res, cmd := m.tpl.Update(msg)
@@ -191,23 +195,23 @@ func (m Model) View() string {
 	search := m.search_bar.View()
 	print_list := m.tpl.View()
 
-	// The footer
-	footer := "Press q to quit.\tPress d for details"
-
 	var main string
-	if m.details.open {
-		main = lipgloss.JoinHorizontal(lipgloss.Left,
-			print_list,
-			m.details.View(),
-		)
+	main = lipgloss.JoinHorizontal(lipgloss.Left,
+		print_list,
+		m.details.View(),
+	)
+
+	var helpmap help.KeyMap
+	if m.search_bar.active {
+		helpmap = search_keys
 	} else {
-		main = print_list
+		helpmap = default_keys
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Top,
+	return lipgloss.JoinVertical(lipgloss.Left,
 		search,
 		main,
-		footer,
+		m.help.View(helpmap),
 	)
 }
 

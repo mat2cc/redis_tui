@@ -11,8 +11,8 @@ type Details struct {
 	key        string
 	data       string
 	redis_type string
-	open       bool
 	width      int
+	height     int
 }
 
 func (dm *Details) Init() tea.Cmd {
@@ -31,12 +31,6 @@ func (dm *Details) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		dm.key = msg.key
 		dm.redis_type = msg.redis_type
 		dm.data = msg.data
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "d":
-			dm.open = !dm.open
-			return dm, nil
-		}
 	}
 	return dm, nil
 }
@@ -44,6 +38,7 @@ func (dm *Details) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (dm *Details) View() string {
 	style := lipgloss.
 		NewStyle().
+    Height(dm.height).
 		Width(dm.width).
 		Border(lipgloss.RoundedBorder())
 

@@ -3,6 +3,7 @@ package main
 import (
 	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -80,14 +81,14 @@ func (s *Search) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case setSearchString:
 		s.input.SetValue(msg.text)
 	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyEnter:
+		switch {
+    case key.Matches(msg, search_keys.Enter):
 			cmd = s.createTextMessage()
 			return s, cmd
-		case tea.KeyEscape:
+    case key.Matches(msg, search_keys.Esc):
 			s.ToggleActive(false)
 			s.input.SetValue(s.old_search)
-		case tea.KeyCtrlC:
+    case key.Matches(msg, search_keys.Quit):
 			return s, tea.Quit
 		}
 		s.input, cmd = s.input.Update(msg)
