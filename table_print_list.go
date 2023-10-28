@@ -24,6 +24,13 @@ func (pl *TablePrintList) ToggleExpand() {
 	n.expanded = !n.expanded
 }
 
+type resetCursor struct {}
+
+
+func (pl *TablePrintList) ResetCursor() tea.Msg {
+  return resetCursor{}
+}
+
 func (pl *TablePrintList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
@@ -31,11 +38,12 @@ func (pl *TablePrintList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     pl.table.SetColumns(createTableCols(pl.width))
 		pl.table.SetWidth(pl.width)
 		pl.table.SetHeight(pl.height - 2) // subtract 2 for the border
-
 	case updatePL:
 		msg.root_node.expanded = !msg.root_node.expanded
 		pl.List = GeneratePrintList(msg.root_node, 0)
 		pl.table.SetRows(pl.GetRows())
+  case resetCursor:
+    pl.table.SetCursor(0)
 	}
 	pl.table, cmd = pl.table.Update(msg)
 
@@ -63,7 +71,15 @@ func (pl *TablePrintList) GetRows() []table.Row {
 }
 
 func (pl *TablePrintList) GetCurrent() *Node {
-  return pl.List[pl.table.Cursor()].Node
+  cursor := pl.table.Cursor();
+  if cursor < 0 || cursor > len(pl.List) {
+    return nil
+    }
+  item := pl.List[cursor];
+  if item == nil {
+    return nil
+  }
+  return item.Node
 }
 
 func (pl *TablePrintList) View() string {

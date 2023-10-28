@@ -42,7 +42,7 @@ func initialModel() Model {
 			DB:       0,  // use default DB
 		}),
 		details: &Details{
-			key:  "",
+			key: "",
 		},
 		search_bar: NewSearch(),
 		tpl:        NewTable(),
@@ -116,8 +116,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.tpl.width = msg.Width/2 - MARGIN
 		m.details.width = msg.Width/2 - MARGIN
 
-    m.tpl.height = msg.Height - 8 
-    m.details.height = msg.Height - 8 
+		m.tpl.height = msg.Height - 8
+		m.details.height = msg.Height - 8
 
 	case scanMsg:
 		for _, key := range msg.keys {
@@ -129,7 +129,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.scan_cursor = msg.cursor
 	case setTextMessage:
 		m.reset(msg.text)
-		return m, m.Scan()
+		cmds := tea.Sequence(m.Scan(), m.tpl.ResetCursor)
+		return m, cmds
 
 	// Is it a key press?
 	case tea.KeyMsg:
@@ -157,8 +158,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, default_keys.Scan):
 			return m, m.Scan()
 		case key.Matches(msg, default_keys.Help):
-      m.help.ShowAll = !m.help.ShowAll
-      return m, nil
+			m.help.ShowAll = !m.help.ShowAll
+			return m, nil
 		case key.Matches(msg, default_keys.Search):
 			m.search_bar.ToggleActive(true)
 			return m, nil
