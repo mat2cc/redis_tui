@@ -5,6 +5,8 @@
 - [x] fix display on the right
   - [ ] format json string
 - [x] implement keys and help
+- [x] redis url input
+  - [ ] allow username/password input
+  - [ ] allow switching DB
 
-- [ ] redis url input
 - [ ] colorschemes

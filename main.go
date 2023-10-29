@@ -20,33 +20,32 @@ const MARGIN = 2
 type Model struct {
 	redis *redis.Client
 
+	conn_string string
 	search      string
 	scan_cursor int
 	node        Node
 
 	// models
-	help       help.Model
-	details    *Details
-	search_bar *Search
-	tpl        *TablePrintList
+	redis_input *RedisInput
+	help        help.Model
+	details     *Details
+	search_bar  *Search
+	tpl         *TablePrintList
 }
 
-func initialModel() Model {
+func initialModel(redis *redis.Client) *Model {
 	help := help.New()
 	help.ShowAll = false
 
-	return Model{
-		redis: redis.NewClient(&redis.Options{
-			Addr:     "localhost:6379",
-			Password: "", // no password set
-			DB:       0,  // use default DB
-		}),
+  return &Model{
+    redis: redis,
 		details: &Details{
 			key: "",
 		},
-		search_bar: NewSearch(),
-		tpl:        NewTable(),
-		help:       help,
+		search_bar:  NewSearch(),
+		redis_input: NewRedisInput(),
+		tpl:         NewTable(),
+		help:        help,
 	}
 }
 
@@ -61,7 +60,7 @@ func (m *Model) reset(search string) {
 	m.scan_cursor = 0
 	m.search = search
 	m.node = Node{}
-  m.details.Reset()
+	m.details.Reset()
 }
 
 func (m *Model) Scan() tea.Cmd {
@@ -107,17 +106,29 @@ func (m *Model) GetDetails(node *Node) tea.Cmd {
 	}
 }
 
+func (m *Model) UpdateSize(width int, height int) {
+	m.tpl.width = width/2 - MARGIN
+	m.details.width = width/2 - MARGIN
+
+	m.tpl.height = height - 7
+	m.details.height = height - 7
+}
+
+func setWindowSize(width int, height int) tea.Cmd {
+  return func () tea.Msg {
+    return tea.WindowSizeMsg{
+      Width: width,
+      Height: height,
+    }
+  }
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.tpl.width = msg.Width/2 - MARGIN
-		m.details.width = msg.Width/2 - MARGIN
-
-		m.tpl.height = msg.Height - 7
-		m.details.height = msg.Height - 7
-
+    m.UpdateSize(msg.Width, msg.Height)
 	case scanMsg:
-    search := strings.ReplaceAll(m.search, "*", "")
+		search := strings.ReplaceAll(m.search, "*", "")
 		for _, key := range msg.keys {
 			split := strings.Split(key, ":")
 			m.node.AddChild(split, key, m.redis, search)
@@ -150,7 +161,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmd := m.GetDetails(node)
 				return m, cmd
 			} else if node != nil {
-        node.expanded = !node.expanded
+				node.expanded = !node.expanded
 				m.tpl.Update(updatePL{&m.node})
 			}
 		case key.Matches(msg, default_keys.Scan):
@@ -179,6 +190,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.search_bar = a
 	} else {
 		return res, cmd
+	}
+
+	res, cmd = m.redis_input.Update(msg)
+	if a, ok := res.(*RedisInput); ok {
+		m.redis_input = a
 	}
 
 	res, cmd = m.details.Update(msg)
@@ -216,7 +232,7 @@ func (m Model) View() string {
 
 func main() {
 	p := tea.NewProgram(
-		initialModel(),
+		NewRedisInput(),
 		tea.WithAltScreen(),
 	)
 	if _, err := p.Run(); err != nil {

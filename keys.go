@@ -94,3 +94,32 @@ var search_keys = searchKeyMap{
 		key.WithHelp("enter", "confirm search"),
 	),
 }
+
+func (k redisInputKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Enter, k.Quit}
+}
+
+// FullHelp returns keybindings for the expanded help view. It's part of the
+// key.Map interface.
+func (k redisInputKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Enter},
+		{k.Quit},
+	}
+}
+
+type redisInputKeyMap struct {
+	Quit  key.Binding
+	Enter key.Binding
+}
+
+var redis_input_keys = searchKeyMap{
+	Quit: key.NewBinding(
+		key.WithKeys("ctrl+c", "esc"),
+		key.WithHelp("ctrl+c", "quit"),
+	),
+	Enter: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "confirm search"),
+	),
+}
