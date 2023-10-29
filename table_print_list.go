@@ -9,41 +9,35 @@ import (
 )
 
 type TablePrintList struct {
-	width int
+	width  int
 	height int
-	table table.Model
-	List  []*PrintItem
+	table  table.Model
+	List   []*PrintItem
 }
 
 func (pl *TablePrintList) Init() tea.Cmd {
 	return nil
 }
 
-func (pl *TablePrintList) ToggleExpand() {
-	n := pl.GetCurrent()
-	n.expanded = !n.expanded
-}
-
-type resetCursor struct {}
-
+type resetCursor struct{}
 
 func (pl *TablePrintList) ResetCursor() tea.Msg {
-  return resetCursor{}
+	return resetCursor{}
 }
 
 func (pl *TablePrintList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-    pl.table.SetColumns(createTableCols(pl.width))
+		pl.table.SetColumns(createTableCols(pl.width))
 		pl.table.SetWidth(pl.width)
 		pl.table.SetHeight(pl.height - 2) // subtract 2 for the border
 	case updatePL:
 		msg.root_node.expanded = !msg.root_node.expanded
 		pl.List = GeneratePrintList(msg.root_node, 0)
 		pl.table.SetRows(pl.GetRows())
-  case resetCursor:
-    pl.table.SetCursor(0)
+	case resetCursor:
+		pl.table.SetCursor(0)
 	}
 	pl.table, cmd = pl.table.Update(msg)
 
@@ -71,30 +65,30 @@ func (pl *TablePrintList) GetRows() []table.Row {
 }
 
 func (pl *TablePrintList) GetCurrent() *Node {
-  cursor := pl.table.Cursor();
-  if cursor < 0 || cursor > len(pl.List) {
-    return nil
-    }
-  item := pl.List[cursor];
-  if item == nil {
-    return nil
-  }
-  return item.Node
+	cursor := pl.table.Cursor()
+	if cursor < 0 || cursor > len(pl.List) {
+		return nil
+	}
+	item := pl.List[cursor]
+	if item == nil {
+		return nil
+	}
+	return item.Node
 }
 
 func (pl *TablePrintList) View() string {
 	style := lipgloss.
 		NewStyle().
-    Width(pl.width). // subtract 2 for the border
-    Height(pl.height).
+		Width(pl.width). // subtract 2 for the border
+		Height(pl.height).
 		Border(lipgloss.RoundedBorder())
 	return style.Render(pl.table.View())
 }
 
-func createTableCols(width int) []table.Column{
+func createTableCols(width int) []table.Column {
 	return []table.Column{
 		{Title: "", Width: 1},
-		{Title: "", Width: width - 4 },
+		{Title: "", Width: width - 4},
 	}
 }
 

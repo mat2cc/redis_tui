@@ -61,10 +61,7 @@ func (m *Model) reset(search string) {
 	m.scan_cursor = 0
 	m.search = search
 	m.node = Node{}
-	m.details = &Details{
-		key:   "",
-		width: m.details.width,
-	}
+  m.details.Reset()
 }
 
 func (m *Model) Scan() tea.Cmd {
@@ -116,13 +113,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.tpl.width = msg.Width/2 - MARGIN
 		m.details.width = msg.Width/2 - MARGIN
 
-		m.tpl.height = msg.Height - 8
-		m.details.height = msg.Height - 8
+		m.tpl.height = msg.Height - 7
+		m.details.height = msg.Height - 7
 
 	case scanMsg:
+    search := strings.ReplaceAll(m.search, "*", "")
 		for _, key := range msg.keys {
 			split := strings.Split(key, ":")
-			m.node.AddChild(split, key, m.redis)
+			m.node.AddChild(split, key, m.redis, search)
 		}
 		m.tpl.Update(updatePL{&m.node})
 
@@ -152,7 +150,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmd := m.GetDetails(node)
 				return m, cmd
 			} else if node != nil {
-				m.tpl.ToggleExpand()
+        node.expanded = !node.expanded
 				m.tpl.Update(updatePL{&m.node})
 			}
 		case key.Matches(msg, default_keys.Scan):

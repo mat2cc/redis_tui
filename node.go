@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"strings"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -14,23 +15,27 @@ type Node struct {
 	expanded  bool
 }
 
-func (n *Node) AddChild(key []string, full string, redis *redis.Client) {
+func (n *Node) AddChild(key []string, full string, redis *redis.Client, search_string string) {
 	if len(key) == 0 {
 		return
 	}
 
 	for _, child := range n.Children {
 		if child.Value == key[0] {
-			child.AddChild(key[1:], full, redis)
+			child.AddChild(key[1:], full, redis, search_string)
 			return
 		}
 	}
-    rt, err := redis.Type(ctx, full).Result()
-    if err != nil {
-        log.Fatal(err)
-    }
+	rt, err := redis.Type(ctx, full).Result()
+	if err != nil {
+		log.Fatal(err)
+	}
 	new_node := &Node{Value: key[0], FullKey: full, RedisType: rt}
-	new_node.AddChild(key[1:], full, redis)
+  // expand if search string if the full key contains the search string
+	if search_string != "" && strings.Contains(full, search_string) {
+		new_node.expanded = true
+	}
+	new_node.AddChild(key[1:], full, redis, search_string)
 	n.Children = append(n.Children, new_node)
 }
 

@@ -25,6 +25,12 @@ type setDetailsMessage struct {
 	data       string
 }
 
+func (dm *Details) Reset() {
+  dm.key = ""
+  dm.data = ""
+  dm.redis_type = ""
+}
+
 func (dm *Details) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case setDetailsMessage:
