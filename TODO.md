@@ -1,8 +1,8 @@
 # TODOs
 
 - [x] fix crashes on empty search results
-- [ ] search should open the matching nodes up to the search
-- [ ] fix display on the right
+- [x] search should open the matching nodes up to the search
+- [x] fix display on the right
   - [ ] format json string
 - [x] implement keys and help
 

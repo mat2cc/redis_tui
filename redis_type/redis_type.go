@@ -65,26 +65,10 @@ func tableStyles() table.Styles {
 
 func StringArrOut(arr *[]string, width int) string {
 	out := ""
-	var rows []table.Row
 	for i, data := range *arr {
-		rows = append(rows, table.Row{
-			fmt.Sprint(i + 1),
-			data,
-		})
-		out += fmt.Sprintf("%s\n", data)
+		out += fmt.Sprintf("%v\t%s\n", i+1, data)
 	}
-	t := table.New(
-		table.WithColumns(
-			[]table.Column{
-				{Title: "", Width: 4},
-				{Title: "Data", Width: width - 8},
-			},
-		),
-		table.WithRows(rows),
-		table.WithFocused(false),
-		table.WithStyles(tableStyles()),
-	)
-	return t.View()
+	return out
 }
 
 func (rs *RedisString) Print(table_width int) string {
