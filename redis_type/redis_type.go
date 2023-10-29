@@ -78,7 +78,7 @@ func (rs *RedisString) Print(table_width int) string {
 func (rh *RedisHash) Print(table_width int) string {
 	out := ""
 	for key, data := range rh.Data {
-		out += fmt.Sprintf("%s: %s\n", key, data)
+		out += fmt.Sprintf("%s:\t%s\n", key, data)
 	}
 	return out
 }

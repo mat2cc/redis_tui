@@ -13,42 +13,48 @@ import (
 )
 
 type RedisInput struct {
-	input  textinput.Model
-	width  int
-	height int
-	error  string
+	conn textinput.Model
+	username   textinput.Model
+	password   textinput.Model
+	width      int
+	height     int
+	error      string
 }
 
 func NewRedisInput() *RedisInput {
-	input := textinput.New()
-	input.Placeholder = "redis://localhost:6379"
-	input.Focus()
+	connection := textinput.New()
+	connection.Placeholder = "redis://localhost:6379"
+	connection.Focus()
+
 	return &RedisInput{
-		input: input,
+		conn: connection,
+		username: textinput.New(),
+		password: textinput.New(),
 	}
 }
 
-func (i *RedisInput) Init() tea.Cmd {
-	return textinput.Blink
+func createRedisClient(conn string) (*redis.Client, error) {
+	if conn == "" {
+		conn = "localhost:6379"
+	} else {
+		conn = strings.TrimPrefix(conn, "redis://")
+	}
+	redis := redis.NewClient(&redis.Options{
+		Addr:     conn,
+		Username: "",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+	_, err := redis.Ping(context.Background()).Result()
+	if err != nil {
+		return nil, err
+	}
+	return redis, nil
 }
 
-func createRedisClient (conn string) (*redis.Client, error) {
-      if conn == "" {
-        conn = "localhost:6379"
-      } else {
-        conn = strings.TrimPrefix(conn, "redis://")
-      }
-			redis := redis.NewClient(&redis.Options{
-				Addr:     conn,
-        Username: "",
-				Password: "", // no password set
-				DB:       0,  // use default DB
-			})
-			_, err := redis.Ping(context.Background()).Result()
-			if err != nil {
-        return nil, err
-			}
-      return redis, nil
+
+func (i *RedisInput) Init() tea.Cmd {
+	return textinput.Blink
 }
 
 func (i *RedisInput) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -62,11 +68,11 @@ func (i *RedisInput) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, redis_input_keys.Quit):
 			return i, tea.Quit
 		case key.Matches(msg, redis_input_keys.Enter):
-      redis, err := createRedisClient(i.input.Value())
-      if err != nil {
-        i.error = err.Error()
-        return i, nil
-      }
+			redis, err := createRedisClient(i.conn.Value())
+			if err != nil {
+				i.error = err.Error()
+				return i, nil
+			}
 
 			model := initialModel(redis)
 			cmds := tea.Batch(setWindowSize(i.width, i.height), model.Scan())
@@ -74,18 +80,20 @@ func (i *RedisInput) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	i.input, cmd = i.input.Update(msg)
+	i.conn, cmd = i.conn.Update(msg)
 	return i, cmd
 }
 
 func (i *RedisInput) View() string {
 	header := "Enter redis connection string\n"
-  error := ""
-  if i.error != "" {
-    style := lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-    error = fmt.Sprintf("\n\n%s\n%s\n", 
-    style.Bold(true).Render("Error"),
-    style.Bold(false).Render(i.error))
-  }
-	return header + i.input.View() + error
+    fields := fmt.Sprintf("Username: %s\nPassword: %s\n", i.username.View(), i.password.View())
+	error := ""
+	if i.error != "" {
+		style := lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+		error = fmt.Sprintf("\n\n%s\n%s\n",
+			style.Bold(true).Render("Error"),
+			style.Bold(false).Render(i.error))
+	}
+
+	return header + i.conn.View() + error
 }

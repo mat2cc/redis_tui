@@ -48,7 +48,7 @@ var default_keys = defaultKeyMap{
 	),
 	Search: key.NewBinding(
 		key.WithKeys("/", "s"),
-		key.WithHelp("s//", "search"),
+		key.WithHelp("s or /", "search"),
 	),
 	Enter: key.NewBinding(
 		key.WithKeys("enter", "e"),
@@ -56,7 +56,7 @@ var default_keys = defaultKeyMap{
 	),
 	Scan: key.NewBinding(
 		key.WithKeys("m"),
-		key.WithHelp("scan", "scan more"),
+		key.WithHelp("m", "scan more"),
 	),
 }
 
