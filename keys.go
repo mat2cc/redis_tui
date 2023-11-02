@@ -111,9 +111,11 @@ func (k redisInputKeyMap) FullHelp() [][]key.Binding {
 type redisInputKeyMap struct {
 	Quit  key.Binding
 	Enter key.Binding
+	Up key.Binding
+	Down key.Binding
 }
 
-var redis_input_keys = searchKeyMap{
+var redis_input_keys = redisInputKeyMap{
 	Quit: key.NewBinding(
 		key.WithKeys("ctrl+c", "esc"),
 		key.WithHelp("ctrl+c", "quit"),
@@ -122,4 +124,12 @@ var redis_input_keys = searchKeyMap{
 		key.WithKeys("enter"),
 		key.WithHelp("enter", "confirm search"),
 	),
+    Up: key.NewBinding(
+        key.WithKeys("up", "shift+tab"),
+        key.WithHelp("↑/shift+tab", "move up"),
+    ),
+    Down: key.NewBinding(
+        key.WithKeys("down", "tab"),
+        key.WithHelp("↓/tab", "move down"),
+    ),
 }
