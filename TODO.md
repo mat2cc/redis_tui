@@ -8,5 +8,8 @@
 - [x] redis url input
   - [ ] allow username/password input
   - [ ] allow switching DB
+  - [ ] allow scan number input
+- [ ] testing
+- [ ] readme
 
 - [ ] colorschemes

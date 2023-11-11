@@ -1,4 +1,4 @@
-package main
+package tui
 
 type updatePL struct {
 	root_node *Node

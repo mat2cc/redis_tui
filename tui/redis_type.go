@@ -1,4 +1,4 @@
-package redis_type
+package tui
 
 import (
 	"fmt"
