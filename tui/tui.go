@@ -21,6 +21,7 @@ type Model struct {
 
 	conn_string string
 	search      string
+    scan_size   int64
 	scan_cursor int
 	node        Node
 
@@ -50,7 +51,7 @@ func createRedisClient(conn string, username string, password string, db int) (*
 	return redis, nil
 }
 
-func initialModel(redis *redis.Client) *Model {
+func initialModel(redis *redis.Client, scanSize int64) *Model {
 	help := help.New()
 	help.ShowAll = false
 
@@ -59,6 +60,7 @@ func initialModel(redis *redis.Client) *Model {
 		details: &Details{
 			key: "",
 		},
+        scan_size: scanSize,
 		search_bar:  NewSearch(),
 		tpl:         NewTable(),
 		help:        help,
@@ -80,7 +82,7 @@ func (m *Model) reset(search string) {
 }
 
 func (m *Model) Scan() tea.Cmd {
-	keys, cursor, err := m.redis.Scan(ctx, uint64(m.scan_cursor), m.search, 1000).Result()
+	keys, cursor, err := m.redis.Scan(ctx, uint64(m.scan_cursor), m.search, m.scan_size).Result()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -241,13 +243,13 @@ func (m Model) View() string {
 	)
 }
 
-func RunTUI(conn string, username string, password string, db int) {
-    client, err := createRedisClient("", "", "", 0)
+func RunTUI(conn string, username string, password string, db int, scanSize int64) {
+    client, err := createRedisClient(conn, username, password, db)
     if err != nil {
         log.Fatal(err)
     }
 	p := tea.NewProgram(
-		initialModel(client),
+		initialModel(client, scanSize),
 		tea.WithAltScreen(),
 	)
 	if _, err := p.Run(); err != nil {

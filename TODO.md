@@ -6,9 +6,9 @@
   - [ ] format json string
 - [x] implement keys and help
 - [x] redis url input
-  - [ ] allow username/password input
-  - [ ] allow switching DB
-  - [ ] allow scan number input
+  - [x] allow username/password input
+  - [x] allow switching DB
+  - [x] allow scan number input
 - [ ] testing
 - [ ] readme
 
