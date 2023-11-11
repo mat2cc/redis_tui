@@ -17,7 +17,7 @@ func GenerateHashType(client *redis.Client, node *Node) *RedisHash {
 	}
 }
 
-func GenerateStringType(client *redis.Client, node *Node) *RedisString {
+func GenerateStringType(client *redis.Client, node *Node, pretty_print_json bool) *RedisString {
 	out, err := client.Get(ctx, node.FullKey).Result()
 	if err != nil {
 		log.Fatal(err)
@@ -25,6 +25,7 @@ func GenerateStringType(client *redis.Client, node *Node) *RedisString {
 	return &RedisString{
 		RedisType: STRING,
 		Data:      out,
+        PrettyPrintJson: pretty_print_json,
 	}
 }
 

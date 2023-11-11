@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/charmbracelet/bubbles/table"
@@ -26,6 +27,7 @@ type RedisType interface {
 type RedisString struct {
 	RedisType RT
 	Data      string
+    PrettyPrintJson bool
 }
 
 type RedisHash struct {
@@ -72,7 +74,16 @@ func StringArrOut(arr *[]string, width int) string {
 }
 
 func (rs *RedisString) Print(table_width int) string {
-	return rs.Data
+	if rs.PrettyPrintJson && json.Valid([]byte(rs.Data)) {
+		var data interface{}
+		json.Unmarshal([]byte(rs.Data), &data)
+		out, err := json.MarshalIndent(data, "", "    ")
+		if err != nil {
+			return rs.Data
+		}
+		return string(out)
+	}
+    return rs.Data
 }
 
 func (rh *RedisHash) Print(table_width int) string {

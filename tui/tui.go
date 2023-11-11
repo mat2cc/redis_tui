@@ -19,17 +19,18 @@ const MARGIN = 2
 type Model struct {
 	redis *redis.Client
 
-	conn_string string
-	search      string
-    scan_size   int64
-	scan_cursor int
-	node        Node
+	conn_string       string
+	search            string
+	scan_size         int64
+	scan_cursor       int
+	node              Node
+	pretty_print_json bool
 
 	// models
-	help        help.Model
-	details     *Details
-	search_bar  *Search
-	tpl         *TablePrintList
+	help       help.Model
+	details    *Details
+	search_bar *Search
+	tpl        *TablePrintList
 }
 
 func createRedisClient(conn string, username string, password string, db int) (*redis.Client, error) {
@@ -51,7 +52,7 @@ func createRedisClient(conn string, username string, password string, db int) (*
 	return redis, nil
 }
 
-func initialModel(redis *redis.Client, scanSize int64) *Model {
+func initialModel(redis *redis.Client, scanSize int64, pretty_print_json bool) *Model {
 	help := help.New()
 	help.ShowAll = false
 
@@ -60,10 +61,11 @@ func initialModel(redis *redis.Client, scanSize int64) *Model {
 		details: &Details{
 			key: "",
 		},
-        scan_size: scanSize,
-		search_bar:  NewSearch(),
-		tpl:         NewTable(),
-		help:        help,
+		scan_size:  scanSize,
+        pretty_print_json: pretty_print_json,
+		search_bar: NewSearch(),
+		tpl:        NewTable(),
+		help:       help,
 	}
 }
 
@@ -103,7 +105,7 @@ func (m *Model) GetDetails(node *Node) tea.Cmd {
 	var res RedisType
 	switch rt {
 	case "string":
-		res = GenerateStringType(m.redis, node)
+		res = GenerateStringType(m.redis, node, m.pretty_print_json)
 	case "list":
 		res = GenerateListType(m.redis, node)
 	case "set":
@@ -243,13 +245,14 @@ func (m Model) View() string {
 	)
 }
 
-func RunTUI(conn string, username string, password string, db int, scanSize int64) {
-    client, err := createRedisClient(conn, username, password, db)
-    if err != nil {
-        log.Fatal(err)
-    }
+
+func RunTUI(conn string, username string, password string, db int, scanSize int64, pretty_print_json bool) {
+	client, err := createRedisClient(conn, username, password, db)
+	if err != nil {
+		log.Fatal(err)
+	}
 	p := tea.NewProgram(
-		initialModel(client, scanSize),
+		initialModel(client, scanSize, pretty_print_json),
 		tea.WithAltScreen(),
 	)
 	if _, err := p.Run(); err != nil {
