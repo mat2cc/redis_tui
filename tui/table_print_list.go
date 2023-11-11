@@ -82,6 +82,13 @@ func (pl *TablePrintList) View() string {
 		Width(pl.width). // subtract 2 for the border
 		Height(pl.height).
 		Border(lipgloss.RoundedBorder())
+	if pl.List == nil || len(pl.List) == 0 {
+		return style.
+			AlignVertical(lipgloss.Center).
+			AlignHorizontal(lipgloss.Center).
+			Bold(true).
+			Render("Whoops, no keys found for that search value")
+	}
 	return style.Render(pl.table.View())
 }
 

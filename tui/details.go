@@ -26,9 +26,9 @@ type setDetailsMessage struct {
 }
 
 func (dm *Details) Reset() {
-  dm.key = ""
-  dm.data = ""
-  dm.redis_type = ""
+	dm.key = ""
+	dm.data = ""
+	dm.redis_type = ""
 }
 
 func (dm *Details) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -44,10 +44,21 @@ func (dm *Details) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (dm *Details) View() string {
 	style := lipgloss.
 		NewStyle().
-    Height(dm.height).
+		Height(dm.height).
 		Width(dm.width).
 		Border(lipgloss.RoundedBorder())
 
-	out := fmt.Sprintf("Key: %s\nType: %s\n\n%s", dm.key, dm.redis_type, dm.data)
+	if dm.key == "" && dm.redis_type == "" {
+		return style.
+			AlignVertical(lipgloss.Center).
+			AlignHorizontal(lipgloss.Center).
+			Bold(true).
+			Render("Select a key to view details")
+	}
+	header := lipgloss.NewStyle().
+		Width(dm.width).
+		Border(lipgloss.DoubleBorder(), false, false, true).
+		Render(fmt.Sprintf("Key: %s\nType: %s", dm.key, dm.redis_type))
+	out := lipgloss.JoinVertical(lipgloss.Top, header, dm.data)
 	return style.Render(out)
 }
