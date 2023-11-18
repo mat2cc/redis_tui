@@ -42,8 +42,8 @@ func createRedisClient(conn string, username string, password string, db int) (*
 	redis := redis.NewClient(&redis.Options{
 		Addr:     conn,
 		Username: username,
-		Password: password, // no password set
-		DB:       db,       // use default DB
+		Password: password,
+		DB:       db,
 	})
 	_, err := redis.Ping(context.Background()).Result()
 	if err != nil {
@@ -61,11 +61,11 @@ func initialModel(redis *redis.Client, scanSize int64, pretty_print_json bool) *
 		details: &Details{
 			key: "",
 		},
-		scan_size:  scanSize,
-        pretty_print_json: pretty_print_json,
-		search_bar: NewSearch(),
-		tpl:        NewTable(),
-		help:       help,
+		scan_size:         scanSize,
+		pretty_print_json: pretty_print_json,
+		search_bar:        NewSearch(),
+		tpl:               NewTable(),
+		help:              help,
 	}
 }
 
@@ -83,6 +83,7 @@ func (m *Model) reset(search string) {
 	m.details.Reset()
 }
 
+// scan redis db using the search string
 func (m *Model) Scan() tea.Cmd {
 	keys, cursor, err := m.redis.Scan(ctx, uint64(m.scan_cursor), m.search, m.scan_size).Result()
 	if err != nil {
@@ -97,6 +98,7 @@ func (m Model) Init() tea.Cmd {
 	return m.Scan()
 }
 
+// set details depending on the type of the key
 func (m *Model) GetDetails(node *Node) tea.Cmd {
 	rt, err := m.redis.Type(ctx, node.FullKey).Result()
 	if err != nil {
@@ -147,7 +149,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.UpdateSize(msg.Width, msg.Height)
-	case scanMsg:
+
+	case scanMsg: // new scan results
 		search := strings.ReplaceAll(m.search, "*", "")
 		for _, key := range msg.keys {
 			split := strings.Split(key, ":")
@@ -156,13 +159,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.tpl.Update(updatePL{&m.node})
 
 		m.scan_cursor = msg.cursor
+
 	case setTextMessage:
 		m.reset(msg.text)
 		cmds := tea.Sequence(m.Scan(), m.tpl.ResetCursor)
 		return m, cmds
 
-	// Is it a key press?
 	case tea.KeyMsg:
+    // if the search bar is active, pass all messages to search
 		if m.search_bar.active {
 			ms, cmd := m.search_bar.Update(msg)
 			m.search_bar = ms.(*Search)
@@ -172,9 +176,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, default_keys.Quit):
 			return m, tea.Quit
+
 		case key.Matches(msg, default_keys.Search):
 			m.search_bar.ToggleActive(true)
 			return m, nil
+
 		case key.Matches(msg, default_keys.Enter):
 			node := m.tpl.GetCurrent()
 			if node != nil && len(node.Children) == 0 {
@@ -184,20 +190,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				node.expanded = !node.expanded
 				m.tpl.Update(updatePL{&m.node})
 			}
+
 		case key.Matches(msg, default_keys.Scan):
 			return m, m.Scan()
+
 		case key.Matches(msg, default_keys.Help):
 			m.help.ShowAll = !m.help.ShowAll
 			return m, nil
+
 		case key.Matches(msg, default_keys.Search):
 			m.search_bar.ToggleActive(true)
 			return m, nil
 		}
-		// TODO: if on a leaf node, find the previous node an close expand
-		// maybe look at the depth and find one less depth that at cursor
-
 	}
 
+  // update the other models on the screen
 	res, cmd := m.tpl.Update(msg)
 	if a, ok := res.(*TablePrintList); ok {
 		m.tpl = a
@@ -216,8 +223,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if a, ok := res.(*Details); ok {
 		m.details = a
 	}
-	// Return the updated model to the Bubble Tea runtime for processing.
-	// Note that we're not returning a command.
 	return m, nil
 }
 
@@ -244,7 +249,6 @@ func (m Model) View() string {
 		m.help.View(helpmap),
 	)
 }
-
 
 func RunTUI(conn string, username string, password string, db int, scanSize int64, pretty_print_json bool) {
 	client, err := createRedisClient(conn, username, password, db)

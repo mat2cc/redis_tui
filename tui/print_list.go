@@ -19,6 +19,7 @@ func (pi *PrintItem) Print() string {
 	return str
 }
 
+// convert the tree to a list of PrintItems
 func GeneratePrintList(root_node *Node, depth int) []*PrintItem {
 	print_list := []*PrintItem{}
 	for _, node := range root_node.Children {

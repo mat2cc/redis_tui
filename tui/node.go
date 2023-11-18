@@ -15,6 +15,7 @@ type Node struct {
 	expanded  bool
 }
 
+// recursively add a child node to the tree
 func (n *Node) AddChild(key []string, full string, redis *redis.Client, search_string string) {
 	if len(key) == 0 {
 		return
@@ -31,7 +32,7 @@ func (n *Node) AddChild(key []string, full string, redis *redis.Client, search_s
 		log.Fatal(err)
 	}
 	new_node := &Node{Value: key[0], FullKey: full, RedisType: rt}
-  // expand if search string if the full key contains the search string
+  // expand if the full key contains the search string
 	if search_string != "" && strings.Contains(full, search_string) {
 		new_node.expanded = true
 	}
@@ -43,6 +44,7 @@ func (n *Node) Print(padding int) string {
 	str := n.Value + "\n"
 	for _, child := range n.Children {
 		if child.expanded {
+      // left pad expanded nodes
 			for i := 0; i < padding; i++ {
 				str += " "
 			}

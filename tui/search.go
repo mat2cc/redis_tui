@@ -37,6 +37,7 @@ func (s *Search) Init() tea.Cmd {
 }
 
 func (s *Search) createTextMessage() tea.Cmd {
+  // if no wildcard is present, add one to the end
 	if !strings.Contains(s.input.Value(), "*") {
 		s.input.SetValue(s.input.Value() + "*")
 	}
@@ -68,9 +69,6 @@ func (s *Search) ToggleActive(active bool) {
         s.input.PromptStyle = noStyle
         s.input.TextStyle = noStyle
 	}
-	//s.input.Cursor.Style = focusedStyle
-	//s.input.TextStyle = focusedStyle
-	//s.input.PromptStyle = focusedStyle
 }
 
 func (s *Search) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -78,16 +76,20 @@ func (s *Search) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		s.width = msg.Width
+
 	case setSearchString:
 		s.input.SetValue(msg.text)
+
 	case tea.KeyMsg:
 		switch {
     case key.Matches(msg, search_keys.Enter):
 			cmd = s.createTextMessage()
 			return s, cmd
+
     case key.Matches(msg, search_keys.Esc):
 			s.ToggleActive(false)
 			s.input.SetValue(s.old_search)
+
     case key.Matches(msg, search_keys.Quit):
 			return s, tea.Quit
 		}

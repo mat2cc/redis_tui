@@ -31,11 +31,13 @@ func (pl *TablePrintList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		pl.table.SetColumns(createTableCols(pl.width))
 		pl.table.SetWidth(pl.width)
-		pl.table.SetHeight(pl.height - 2) // subtract 2 for the border
+		pl.table.SetHeight(pl.height - MARGIN)
+
 	case updatePL:
 		msg.root_node.expanded = !msg.root_node.expanded
 		pl.List = GeneratePrintList(msg.root_node, 0)
 		pl.table.SetRows(pl.GetRows())
+
 	case resetCursor:
 		pl.table.SetCursor(0)
 	}
@@ -44,6 +46,7 @@ func (pl *TablePrintList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return pl, cmd
 }
 
+// return a list of rows to be displayed in the table
 func (pl *TablePrintList) GetRows() []table.Row {
 	rows := []table.Row{}
 	for _, item := range pl.List {
@@ -64,6 +67,7 @@ func (pl *TablePrintList) GetRows() []table.Row {
 	return rows
 }
 
+// return a pointer to the current node
 func (pl *TablePrintList) GetCurrent() *Node {
 	cursor := pl.table.Cursor()
 	if cursor < 0 || cursor > len(pl.List) {
@@ -79,7 +83,7 @@ func (pl *TablePrintList) GetCurrent() *Node {
 func (pl *TablePrintList) View() string {
 	style := lipgloss.
 		NewStyle().
-		Width(pl.width). // subtract 2 for the border
+		Width(pl.width).
 		Height(pl.height).
 		Border(lipgloss.RoundedBorder())
 	if pl.List == nil || len(pl.List) == 0 {
@@ -95,7 +99,7 @@ func (pl *TablePrintList) View() string {
 func createTableCols(width int) []table.Column {
 	return []table.Column{
 		{Title: "", Width: 1},
-		{Title: "", Width: width - 4},
+		{Title: "", Width: width - MARGIN * 2},
 	}
 }
 
