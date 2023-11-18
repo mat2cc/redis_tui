@@ -11,9 +11,10 @@ builds:
       - windows
       - darwin
 brews:
-  - tap: 
+  - repository: 
       owner: mat2cc
       name: homebrew-tap
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
     name: redis_tui
     homepage: https://github.com/mat2cc/redis_tui
     description: 'Redis TUI: view all of your redis data in the terminal'
