@@ -34,7 +34,7 @@ func (pl *TablePrintList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		pl.table.SetHeight(pl.height - MARGIN)
 
 	case updatePL:
-		msg.root_node.expanded = !msg.root_node.expanded
+		msg.root_node.Expanded = !msg.root_node.Expanded
 		pl.List = GeneratePrintList(msg.root_node, 0)
 		pl.table.SetRows(pl.GetRows())
 
@@ -53,7 +53,7 @@ func (pl *TablePrintList) GetRows() []table.Row {
 		prexfix := ""
 		postfix := ""
 		if len(item.Node.Children) > 0 {
-			if item.Node.expanded {
+			if item.Node.Expanded {
 				prexfix += "v"
 			} else {
 				prexfix += ">"

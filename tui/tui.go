@@ -186,7 +186,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmd := m.GetDetails(node)
 				return m, cmd
 			} else if node != nil {
-				node.expanded = !node.expanded
+				node.Expanded = !node.Expanded
 				m.tpl.Update(updatePL{&m.Node})
 			}
 
