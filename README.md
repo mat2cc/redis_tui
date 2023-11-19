@@ -13,7 +13,7 @@ brew install mat2cc/tap/redis_tui
 
 **go**:
 ```sh
-go install github.com/mat2cc/redis_tui
+go install github.com/mat2cc/redis_tui@latest
 ```
 
 ## Usage
