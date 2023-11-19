@@ -29,4 +29,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - run: go test ./...
+      - name: run tests
+        shell: /usr/bin/bash -e {0}
+        run: go test ./...
