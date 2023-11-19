@@ -1,4 +1,8 @@
 # redis_tui
+<p>
+    <a href="https://github.com/mat2cc/redis_tui/releases"><img src="https://img.shields.io/github/release/mat2cc/redis_tui.svg" alt="Latest Release"></a>
+    <a href="https://github.com/mat2cc/redis_tui/actions"><img src="https://github.com/mat2cc/redis_tui/workflows/test/badge.svg" alt="Build Status"></a>
+</p>
 
 Redis terminal browser written in go, with the use of charmbraclet's [bubbletea](https://github.com/charmbracelet/bubbletea)
 
