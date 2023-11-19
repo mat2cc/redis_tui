@@ -8,6 +8,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    container: ubuntu:mantic
     services:
       redis:
         image: redis
