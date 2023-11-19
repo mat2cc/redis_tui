@@ -24,6 +24,3 @@ redis_tui -address localhost:6379 -db 2
 ```
 
 While in the redis_tui, press `?` for movement instructions
-
-## Todo
-- [ ] write tests

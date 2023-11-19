@@ -22,8 +22,8 @@ type Model struct {
 	conn_string       string
 	search            string
 	scan_size         int64
-	scan_cursor       int
-	node              Node
+	ScanCursor        int
+	Node              Node
 	pretty_print_json bool
 
 	// models
@@ -33,7 +33,7 @@ type Model struct {
 	tpl        *TablePrintList
 }
 
-func createRedisClient(conn string, username string, password string, db int) (*redis.Client, error) {
+func CreateRedisClient(conn string, username string, password string, db int) (*redis.Client, error) {
 	if conn == "" {
 		conn = "localhost:6379"
 	} else {
@@ -52,7 +52,7 @@ func createRedisClient(conn string, username string, password string, db int) (*
 	return redis, nil
 }
 
-func initialModel(redis *redis.Client, scanSize int64, pretty_print_json bool) *Model {
+func InitialModel(redis *redis.Client, scanSize int64, pretty_print_json bool) *Model {
 	help := help.New()
 	help.ShowAll = false
 
@@ -77,15 +77,15 @@ type scanMsg struct {
 var ctx = context.Background()
 
 func (m *Model) reset(search string) {
-	m.scan_cursor = 0
+	m.ScanCursor = 0
 	m.search = search
-	m.node = Node{}
+	m.Node = Node{}
 	m.details.Reset()
 }
 
 // scan redis db using the search string
 func (m *Model) Scan() tea.Cmd {
-	keys, cursor, err := m.redis.Scan(ctx, uint64(m.scan_cursor), m.search, m.scan_size).Result()
+	keys, cursor, err := m.redis.Scan(ctx, uint64(m.ScanCursor), m.search, m.scan_size).Result()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func (m *Model) Scan() tea.Cmd {
 	}
 }
 
-func (m Model) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	return m.Scan()
 }
 
@@ -145,7 +145,7 @@ func setWindowSize(width int, height int) tea.Cmd {
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.UpdateSize(msg.Width, msg.Height)
@@ -154,11 +154,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		search := strings.ReplaceAll(m.search, "*", "")
 		for _, key := range msg.keys {
 			split := strings.Split(key, ":")
-			m.node.AddChild(split, key, m.redis, search)
+			m.Node.AddChild(split, key, m.redis, search)
 		}
-		m.tpl.Update(updatePL{&m.node})
-
-		m.scan_cursor = msg.cursor
+		m.tpl.Update(updatePL{&m.Node})
+		m.ScanCursor = msg.cursor
 
 	case setTextMessage:
 		m.reset(msg.text)
@@ -166,7 +165,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmds
 
 	case tea.KeyMsg:
-    // if the search bar is active, pass all messages to search
+		// if the search bar is active, pass all messages to search
 		if m.search_bar.active {
 			ms, cmd := m.search_bar.Update(msg)
 			m.search_bar = ms.(*Search)
@@ -187,8 +186,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmd := m.GetDetails(node)
 				return m, cmd
 			} else if node != nil {
-				node.expanded = !node.expanded
-				m.tpl.Update(updatePL{&m.node})
+				node.Expanded = !node.Expanded
+				m.tpl.Update(updatePL{&m.Node})
 			}
 
 		case key.Matches(msg, default_keys.Scan):
@@ -204,7 +203,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-  // update the other models on the screen
+	// update the other models on the screen
 	res, cmd := m.tpl.Update(msg)
 	if a, ok := res.(*TablePrintList); ok {
 		m.tpl = a
@@ -226,7 +225,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) View() string {
+func (m *Model) View() string {
 	search := m.search_bar.View()
 	print_list := m.tpl.View()
 
@@ -251,12 +250,12 @@ func (m Model) View() string {
 }
 
 func RunTUI(conn string, username string, password string, db int, scanSize int64, pretty_print_json bool) {
-	client, err := createRedisClient(conn, username, password, db)
+	client, err := CreateRedisClient(conn, username, password, db)
 	if err != nil {
 		log.Fatal(err)
 	}
 	p := tea.NewProgram(
-		initialModel(client, scanSize, pretty_print_json),
+		InitialModel(client, scanSize, pretty_print_json),
 		tea.WithAltScreen(),
 	)
 	if _, err := p.Run(); err != nil {

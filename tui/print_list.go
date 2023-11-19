@@ -6,12 +6,12 @@ type updatePL struct {
 
 type PrintItem struct {
 	Node  *Node
-	depth int
+	Depth int
 }
 
 func (pi *PrintItem) Print() string {
 	str := ""
-	for i := 0; i < pi.depth; i++ {
+	for i := 0; i < pi.Depth; i++ {
 		str += "  "
 	}
 	str += pi.Node.Value
@@ -24,7 +24,7 @@ func GeneratePrintList(root_node *Node, depth int) []*PrintItem {
 	print_list := []*PrintItem{}
 	for _, node := range root_node.Children {
 		print_list = append(print_list, &PrintItem{node, depth})
-		if node.expanded {
+		if node.Expanded {
 			print_list = append(print_list, GeneratePrintList(node, depth+1)...)
 		}
 	}
