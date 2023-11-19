@@ -1,6 +1,7 @@
 package test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 	"time"
@@ -37,10 +38,12 @@ func TestScan(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+  var buf bytes.Buffer
 
 	model := tui.InitialModel(client, 10, true)
 	p := tea.NewProgram(
 		model,
+    tea.WithOutput(&buf),
 	)
 	go func() {
 		for {

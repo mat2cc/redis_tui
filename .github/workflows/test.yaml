@@ -8,7 +8,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    container: ubuntu:mantic
     services:
       redis:
         image: redis
@@ -31,5 +30,4 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: run tests
-        shell: /usr/bin/bash -e {0}
         run: go test ./...
