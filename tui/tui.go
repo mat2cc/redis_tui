@@ -152,10 +152,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case scanMsg: // new scan results
 		search := strings.ReplaceAll(m.search, "*", "")
-		for _, key := range msg.keys {
-			split := strings.Split(key, ":")
-			m.Node.AddChild(split, key, m.redis, search)
-		}
+		m.Node.GenNodes(msg.keys, m.redis, search)
+
 		m.tpl.Update(updatePL{&m.Node})
 		m.ScanCursor = msg.cursor
 
