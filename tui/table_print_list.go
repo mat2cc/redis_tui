@@ -58,9 +58,8 @@ func (pl *TablePrintList) GetRows() []table.Row {
 			} else {
 				prexfix += ">"
 			}
-		} else {
+		} else if len(item.Node.RedisType) > 0 {
 			postfix = fmt.Sprintf(" [%s]", item.Node.RedisType)
-			prexfix += ""
 		}
 		rows = append(rows, table.Row{prexfix, item.Print() + postfix})
 	}
@@ -99,7 +98,7 @@ func (pl *TablePrintList) View() string {
 func createTableCols(width int) []table.Column {
 	return []table.Column{
 		{Title: "", Width: 1},
-		{Title: "", Width: width - MARGIN * 2},
+		{Title: "", Width: width - MARGIN*2},
 	}
 }
 
