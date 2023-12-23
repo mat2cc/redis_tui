@@ -40,7 +40,7 @@ func TestScan(t *testing.T) {
 	}
   var buf bytes.Buffer
 
-	model := tui.InitialModel(client, 10, true)
+	model := tui.InitialModel(client, 10, true, true)
 	p := tea.NewProgram(
 		model,
     tea.WithInput(nil),
