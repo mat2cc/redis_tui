@@ -93,11 +93,18 @@ func (m *Model) Init() tea.Cmd {
 
 // set details depending on the type of the key
 func (m *Model) GetDetails(node *Node) tea.Cmd {
-	rt, err := m.redis.Type(ctx, node.FullKey).Result()
-	if err != nil {
-		log.Fatal(err)
-	}
+	var rt string
+	var err error
 	var res RedisType
+
+	rt = node.RedisType
+	if rt == "" {
+		rt, err = m.redis.Type(ctx, node.FullKey).Result()
+		log.Println("rt", rt)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 	switch rt {
 	case "string":
 		res = GenerateStringType(m.redis, node, m.opts.pretty_print_json)
@@ -117,7 +124,7 @@ func (m *Model) GetDetails(node *Node) tea.Cmd {
 		if res == nil {
 			return setDetailsMessage{node.FullKey, "", "Type Not implemented"}
 		}
-		return setDetailsMessage{node.FullKey, node.RedisType, res.Print(m.details.width)}
+		return setDetailsMessage{node.FullKey, rt, res.Print(m.details.width)}
 	}
 }
 

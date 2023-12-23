@@ -39,18 +39,21 @@ func (n *Node) GenNodes(keys []string, client *redis.Client, search string, incl
 		split := strings.Split(key, ":")
 		n.AddChild(split, key, client, search, tb)
 	}
-	cmds, err := tb.pipe.Exec(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
 
-  errLogger := log.New(os.Stderr, "Error getting type for node: ", 0)
-	for i, cmd := range cmds {
-		rt, err := cmd.(*redis.StatusCmd).Result()
+	if include_types {
+		cmds, err := tb.pipe.Exec(ctx)
 		if err != nil {
-      errLogger.Println(tb.nodes[i].FullKey)
+			log.Fatal(err)
 		}
-		tb.nodes[i].RedisType = rt
+
+		errLogger := log.New(os.Stderr, "Error getting type for node: ", 0)
+		for i, cmd := range cmds {
+			rt, err := cmd.(*redis.StatusCmd).Result()
+			if err != nil {
+				errLogger.Println(tb.nodes[i].FullKey)
+			}
+			tb.nodes[i].RedisType = rt
+		}
 	}
 }
 
@@ -68,9 +71,9 @@ func (n *Node) AddChild(key []string, full string, client *redis.Client, search_
 		}
 	}
 
-  new_node := &Node{Value: key[0], FullKey: full}
+	new_node := &Node{Value: key[0], FullKey: full}
 
-  // only get the type if it's a leaf node
+	// only get the type if it's a leaf node
 	if len(key) == 1 {
 		tb.add_type(new_node, full)
 	}
