@@ -34,7 +34,7 @@ While in the redis_tui, press `?` for movement instructions
 
 ## Under the hood
 
-redis_tui is powered by the [redis SCAN command](https://redis.io/commands/scan) where we are gathering a variable number (configured by the `--scan-size` arguments, with default of 1000) of keys per scan. A cursor is kept so that every time the `m` key is hit, more keys will be fetched.
+redis_tui is powered by the [redis SCAN command](https://redis.io/commands/scan) where we are gathering a variable number of keys per scan (configured by the `--scan-size` arguments, with default of 1000). A cursor is kept so that every time the `m` key is pressed, more keys will be fetched.
 
 To get the redis type information, we are using a [Redis Pipeline](https://redis.io/docs/manual/pipelining/) which will batch all of the type reqests for each scan into one transaction. This can be disabled by setting `--include-types=false`, where type information will only be retrieved when opening the details view for a specific key.
 
