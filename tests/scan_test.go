@@ -10,16 +10,10 @@ import (
 	"github.com/mat2cc/redis_tui/tui"
 )
 
-func TestScan(t *testing.T) {
-	client, err := tui.CreateRedisClient("", "", "", 2)
-	client.Set(context.Background(), "foo", "foo", time.Second*10)
-	client.Set(context.Background(), "foo:bar", "bar", time.Second*10)
-	client.Set(context.Background(), "foo:bar:baz", "baz", time.Second*10)
-	client.Set(context.Background(), "foo:bar:bat", "bat", time.Second*10)
-	client.Set(context.Background(), "test", "test", time.Second*10)
-	client.Set(context.Background(), "testing:123", "123", time.Second*10)
+/* Helpers */
 
-	node := tui.Node{
+func genNodes() tui.Node {
+	return tui.Node{
 		Value: "",
 		Children: []*tui.Node{
 			{Value: "foo", Children: []*tui.Node{
@@ -33,35 +27,6 @@ func TestScan(t *testing.T) {
 				{Value: "123"},
 			}},
 		},
-	}
-
-	if err != nil {
-		t.Error(err)
-	}
-  var buf bytes.Buffer
-
-	model := tui.InitialModel(client, 10, true, true)
-	p := tea.NewProgram(
-		model,
-    tea.WithInput(nil),
-    tea.WithOutput(&buf),
-	)
-	go func() {
-		for {
-			time.Sleep(time.Millisecond * 100)
-			if model.Node.Children != nil {
-				p.Quit()
-				return
-			}
-		}
-	}()
-
-	_, err = p.Run()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !recursivelyCompareTrees(model.Node, node) {
-		t.Error("Nodes are not equal")
 	}
 }
 
@@ -89,3 +54,97 @@ func recursivelyCompareTrees(a, b tui.Node) bool {
 
 	return false
 }
+
+func createModelOpts(delimiter string) tui.ModelOptions {
+    return tui.ModelOptions{
+        ScanSize:        10,
+        PrettyPrintJson: true,
+        IncludeTypes:    true,
+        Delimiter:       delimiter,
+    }
+}
+
+/* Tests */
+
+func TestCustomDelimiter(t *testing.T) {
+	client, err := tui.CreateRedisClient("", "", "", 1)
+	client.Set(context.Background(), "foo", "foo", time.Second*10)
+	client.Set(context.Background(), "foo::bar", "bar", time.Second*10)
+	client.Set(context.Background(), "foo::bar::baz", "baz", time.Second*10)
+	client.Set(context.Background(), "foo::bar::bat", "bat", time.Second*10)
+	client.Set(context.Background(), "test", "test", time.Second*10)
+	client.Set(context.Background(), "testing::123", "123", time.Second*10)
+
+	if err != nil {
+		t.Error(err)
+	}
+	var buf bytes.Buffer
+
+	model := tui.InitialModel(client, createModelOpts("::"))
+	p := tea.NewProgram(
+		model,
+		tea.WithInput(nil),
+		tea.WithOutput(&buf),
+	)
+	go func() {
+		for {
+			time.Sleep(time.Millisecond * 100)
+			if model.Node.Children != nil {
+				p.Quit()
+				return
+			}
+		}
+	}()
+
+	nodes := genNodes()
+
+	_, err = p.Run()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !recursivelyCompareTrees(model.Node, nodes) {
+		t.Error("Nodes are not equal")
+	}
+}
+
+func TestScan(t *testing.T) {
+	client, err := tui.CreateRedisClient("", "", "", 2)
+	client.Set(context.Background(), "foo", "foo", time.Second*10)
+	client.Set(context.Background(), "foo:bar", "bar", time.Second*10)
+	client.Set(context.Background(), "foo:bar:baz", "baz", time.Second*10)
+	client.Set(context.Background(), "foo:bar:bat", "bat", time.Second*10)
+	client.Set(context.Background(), "test", "test", time.Second*10)
+	client.Set(context.Background(), "testing:123", "123", time.Second*10)
+
+	if err != nil {
+		t.Error(err)
+	}
+	var buf bytes.Buffer
+
+	model := tui.InitialModel(client, createModelOpts(":"))
+	p := tea.NewProgram(
+		model,
+		tea.WithInput(nil),
+		tea.WithOutput(&buf),
+	)
+	go func() {
+		for {
+			time.Sleep(time.Millisecond * 100)
+			if model.Node.Children != nil {
+				p.Quit()
+				return
+			}
+		}
+	}()
+
+	nodes := genNodes()
+
+	_, err = p.Run()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !recursivelyCompareTrees(model.Node, nodes) {
+		t.Error("Nodes are not equal")
+	}
+}
+
