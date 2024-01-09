@@ -2,11 +2,14 @@ package cmd
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/mat2cc/redis_tui/tui"
 )
 
-func Run() {
+func Run(app_version string) {
+	version := flag.Bool("version", false, "Application version")
+
 	addressPtr := flag.String("address", "localhost:6379", "Redis server address")
 	usernamePtr := flag.String("username", "", "Redis username (optional)")
 	passwordPtr := flag.String("password", "", "Redis password (optional)")
@@ -18,6 +21,10 @@ func Run() {
 	delimiter := flag.String("delimiter", ":", "Delimiter for key names.")
 
 	flag.Parse()
+    if *version {
+        fmt.Println(app_version)
+        return
+    }
 
 	tui.RunTUI(
 		tui.RedisOptions{
