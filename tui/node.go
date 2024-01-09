@@ -33,14 +33,14 @@ func (tb *type_builder) add_type(node *Node, redis_type string) {
 	tb.pipe.Type(ctx, node.FullKey)
 }
 
-func (n *Node) GenNodes(keys []string, client *redis.Client, search string, include_types bool) {
+func (n *Node) GenNodes(keys []string, client *redis.Client, search string, opts ModelOptions) {
 	tb := new_type_builder(client)
 	for _, key := range keys {
-		split := strings.Split(key, ":")
+		split := strings.Split(key, opts.Delimiter)
 		n.AddChild(split, key, client, search, tb)
 	}
 
-	if include_types {
+	if opts.IncludeTypes {
 		cmds, err := tb.pipe.Exec(ctx)
 		if err != nil {
 			log.Fatal(err)

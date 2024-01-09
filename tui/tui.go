@@ -11,14 +11,11 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type Options struct {
+type RedisOptions struct {
 	Address         string
 	Username        string
 	Password        string
 	DB              int
-	ScanSize        int64
-	PrettyPrintJson bool
-	IncludeTypes    bool
 }
 
 func CreateRedisClient(conn string, username string, password string, db int) (*redis.Client, error) {
@@ -40,12 +37,12 @@ func CreateRedisClient(conn string, username string, password string, db int) (*
 	return redis, nil
 }
 
-func RunTUI(opts Options) {
+func RunTUI(redis_opts RedisOptions, model_opts ModelOptions) {
 	client, err := CreateRedisClient(
-		opts.Address,
-		opts.Username,
-		opts.Password,
-		opts.DB,
+		redis_opts.Address,
+		redis_opts.Username,
+		redis_opts.Password,
+		redis_opts.DB,
 	)
 
 	if err != nil {
@@ -54,9 +51,7 @@ func RunTUI(opts Options) {
 	p := tea.NewProgram(
 		InitialModel(
 			client,
-			opts.ScanSize,
-			opts.PrettyPrintJson,
-			opts.IncludeTypes,
+            model_opts,
 		),
 		tea.WithAltScreen(),
 	)

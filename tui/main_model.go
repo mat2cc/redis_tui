@@ -15,9 +15,10 @@ import (
 const MARGIN = 2
 
 type ModelOptions struct {
-	pretty_print_json bool
-	include_types     bool
-	scan_size         int64
+	PrettyPrintJson bool
+	IncludeTypes     bool
+	ScanSize         int64
+	Delimiter         string
 }
 
 type Model struct {
@@ -39,9 +40,7 @@ type Model struct {
 
 func InitialModel(
 	redis *redis.Client,
-	scanSize int64,
-	pretty_print_json bool,
-	include_types bool,
+	model_opts ModelOptions,
 ) *Model {
 	help := help.New()
 	help.ShowAll = false
@@ -54,11 +53,7 @@ func InitialModel(
 		search_bar: NewSearch(),
 		tpl:        NewTable(),
 		help:       help,
-		opts: ModelOptions{
-			pretty_print_json: pretty_print_json,
-			include_types:     include_types,
-			scan_size:         scanSize,
-		},
+		opts:       model_opts,
 	}
 }
 
@@ -78,7 +73,7 @@ func (m *Model) reset(search string) {
 
 // scan redis db using the search string
 func (m *Model) Scan() tea.Cmd {
-	keys, cursor, err := m.redis.Scan(ctx, uint64(m.ScanCursor), m.search, m.opts.scan_size).Result()
+	keys, cursor, err := m.redis.Scan(ctx, uint64(m.ScanCursor), m.search, m.opts.ScanSize).Result()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -107,7 +102,7 @@ func (m *Model) GetDetails(node *Node) tea.Cmd {
 	}
 	switch rt {
 	case "string":
-		res = GenerateStringType(m.redis, node, m.opts.pretty_print_json)
+		res = GenerateStringType(m.redis, node, m.opts.PrettyPrintJson)
 	case "list":
 		res = GenerateListType(m.redis, node)
 	case "set":
@@ -152,7 +147,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case scanMsg: // new scan results
 		search := strings.ReplaceAll(m.search, "*", "")
-		m.Node.GenNodes(msg.keys, m.redis, search, m.opts.include_types)
+		m.Node.GenNodes(msg.keys, m.redis, search, m.opts)
 
 		m.tpl.Update(updatePL{&m.Node})
 		m.ScanCursor = msg.cursor
