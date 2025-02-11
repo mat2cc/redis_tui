@@ -9,6 +9,8 @@ import (
 
 func Run(app_version string) {
 	version := flag.Bool("version", false, "Application version")
+	tls := flag.Bool("tls", false, "Enable tls connection")
+	tlsInsecure := flag.Bool("tls-insecure", false, "Disable tls verify")
 
 	addressPtr := flag.String("address", "localhost:6379", "Redis server address")
 	usernamePtr := flag.String("username", "", "Redis username (optional)")
@@ -21,17 +23,19 @@ func Run(app_version string) {
 	delimiter := flag.String("delimiter", ":", "Delimiter for key names.")
 
 	flag.Parse()
-    if *version {
-        fmt.Println(app_version)
-        return
-    }
+	if *version {
+		fmt.Println(app_version)
+		return
+	}
 
 	tui.RunTUI(
 		tui.RedisOptions{
-			Address:  *addressPtr,
-			Username: *usernamePtr,
-			Password: *passwordPtr,
-			DB:       *dbPtr,
+			Address:     *addressPtr,
+			Username:    *usernamePtr,
+			Password:    *passwordPtr,
+			DB:          *dbPtr,
+			Tls:         *tls,
+			TleInsecure: *tlsInsecure,
 		},
 		tui.ModelOptions{
 			ScanSize:        *scanSize,
