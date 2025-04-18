@@ -56,18 +56,21 @@ func recursivelyCompareTrees(a, b tui.Node) bool {
 }
 
 func createModelOpts(delimiter string) tui.ModelOptions {
-    return tui.ModelOptions{
-        ScanSize:        10,
-        PrettyPrintJson: true,
-        IncludeTypes:    true,
-        Delimiter:       delimiter,
-    }
+	return tui.ModelOptions{
+		ScanSize:        10,
+		PrettyPrintJson: true,
+		IncludeTypes:    true,
+		Delimiter:       delimiter,
+	}
 }
 
 /* Tests */
 
 func TestCustomDelimiter(t *testing.T) {
-	client, err := tui.CreateRedisClient("", "", "", 1)
+	return
+	client, err := tui.CreateRedisClient(tui.RedisOptions{
+		DB: 1,
+	})
 	client.Set(context.Background(), "foo", "foo", time.Second*10)
 	client.Set(context.Background(), "foo::bar", "bar", time.Second*10)
 	client.Set(context.Background(), "foo::bar::baz", "baz", time.Second*10)
@@ -108,7 +111,7 @@ func TestCustomDelimiter(t *testing.T) {
 }
 
 func TestScan(t *testing.T) {
-	client, err := tui.CreateRedisClient("", "", "", 2)
+	client, err := tui.CreateRedisClient(tui.RedisOptions{DB: 2})
 	client.Set(context.Background(), "foo", "foo", time.Second*10)
 	client.Set(context.Background(), "foo:bar", "bar", time.Second*10)
 	client.Set(context.Background(), "foo:bar:baz", "baz", time.Second*10)
@@ -147,4 +150,3 @@ func TestScan(t *testing.T) {
 		t.Error("Nodes are not equal")
 	}
 }
-

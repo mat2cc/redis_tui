@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"os"
@@ -12,47 +13,45 @@ import (
 )
 
 type RedisOptions struct {
-	Address         string
-	Username        string
-	Password        string
-	DB              int
+	Address  string
+	Username string
+	Password string
+	DB       int
+	TLS      bool
 }
 
-func CreateRedisClient(conn string, username string, password string, db int) (*redis.Client, error) {
-	if conn == "" {
+func CreateRedisClient(opts RedisOptions) (*redis.Client, error) {
+	conn := opts.Address
+	if opts.Address == "" {
 		conn = "localhost:6379"
-	} else {
-		conn = strings.TrimPrefix(conn, "redis://")
+	}
+	conn = strings.TrimPrefix(conn, "redis://")
+	var tlsConfig *tls.Config
+	if opts.TLS {
+		tlsConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 	redis := redis.NewClient(&redis.Options{
-		Addr:     conn,
-		Username: username,
-		Password: password,
-		DB:       db,
+		Network:   "tcp",
+		TLSConfig: tlsConfig,
+		Addr:      conn,
+		Username:  opts.Username,
+		Password:  opts.Password,
+		DB:        opts.DB,
 	})
 	_, err := redis.Ping(context.Background()).Result()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ping redis: %w", err)
 	}
 	return redis, nil
 }
 
-func RunTUI(redis_opts RedisOptions, model_opts ModelOptions) {
-	client, err := CreateRedisClient(
-		redis_opts.Address,
-		redis_opts.Username,
-		redis_opts.Password,
-		redis_opts.DB,
-	)
-
+func RunTUI(redisOpts RedisOptions, modelOpts ModelOptions) {
+	client, err := CreateRedisClient(redisOpts)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("connect to redis: %v", err))
 	}
 	p := tea.NewProgram(
-		InitialModel(
-			client,
-            model_opts,
-		),
+		InitialModel(client, modelOpts),
 		tea.WithAltScreen(),
 	)
 	if _, err := p.Run(); err != nil {
